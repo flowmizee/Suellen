@@ -468,13 +468,13 @@
       window.onload = async () => {
         await initializeImageRecognition();
         
-        // Enviar mensagem inicial após 5 segundos se o usuário não interagir
+        // Enviar mensagem inicial após 1 segundo
         setTimeout(() => {
           if (!initialMessageSent && document.getElementById('chatBody').children.length === 0) {
             simulateTyping("Oiê, gato! Tudo bem com você? 🥰");
             initialMessageSent = true;
           }
-        }, 5000);
+        }, 1000);
       };
 
       async function analyzeImage(imageData) {
@@ -835,22 +835,11 @@
         updateActionIcon();
         isWaitingResponse = true;
         
-        // Configurar o delay para mostrar "digitando..."
-        typingTimeout = setTimeout(() => {
-          showTypingIndicator();
-        }, 5000); // 5 segundos de delay
+        // Mostrar indicador de digitação imediatamente
+        showTypingIndicator();
         
         const lower = text.toLowerCase();
         const normalized = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        
-        // Verificar se o usuário está enviando uma imagem
-        if (document.getElementById('uploadImage').files.length > 0) {
-          clearTimeout(typingTimeout);
-          hideTypingIndicator();
-          await handleImageUpload(document.getElementById('uploadImage').files[0]);
-          isWaitingResponse = false;
-          return;
-        }
         
         // Capturar nome do usuário
         if (!userName && (normalized.includes('meu nome é') || normalized.includes('eu sou') || normalized.includes('me chamo'))) {
@@ -867,7 +856,6 @@
             (normalized.includes('de onde') && normalized.includes('suellen')) ||
             normalized.includes('onde mora') || normalized.includes('onde vive') ||
             normalized.includes('vc é de onde') || normalized.includes('você é de onde')) {
-          clearTimeout(typingTimeout);
           hideTypingIndicator();
           await simulateTyping("Eu sou a Suellen, uma garota que adora conversas quentes e fotos provocantes... Tenho 24 anos, sou de Florianópolis agora, mas nasci em Cachoeira de Itabuna, na Bahia. Adoro praia, música e conversas interessantes como a nossa! 😘");
           isWaitingResponse = false;
@@ -877,7 +865,6 @@
         // História pessoal
         if (normalized.includes('história') || normalized.includes('vida') || normalized.includes('passado') ||
             normalized.includes('como você começou') || normalized.includes('como vc começou')) {
-          clearTimeout(typingTimeout);
           hideTypingIndicator();
           await simulateTyping("Ah, quer saber da minha história? Eu era uma garota tímida na Bahia, até que descobri meu lado mais ousado... rsrs");
           await simulateTyping("Me mudei pra Floripa pra viver mais livre, conhecer gente interessante como você! Foi a melhor decisão da minha vida! 😊");
@@ -890,7 +877,6 @@
             normalized.includes('fotinhas') || normalized.includes('ver foto') || normalized.includes('ver fotos') ||
             normalized.includes('me manda foto') || normalized.includes('me manda fotos') || normalized.includes('manda foto') ||
             normalized.match(/\b(\d+)\s*fotos?\b/i)) {
-          clearTimeout(typingTimeout);
           hideTypingIndicator();
           
           // Extrair quantidade de fotos solicitadas
@@ -910,7 +896,6 @@
         }
         
         // Se não for nenhum dos casos acima, usa a resposta personalizada
-        clearTimeout(typingTimeout);
         hideTypingIndicator();
         await generateFlirtyResponse(text);
         isWaitingResponse = false;
@@ -992,13 +977,9 @@
           typingEl.remove();
           typingEl = null;
         }
-        if (typingTimeout) {
-          clearTimeout(typingTimeout);
-          typingTimeout = null;
-        }
       }
 
-      async function simulateTyping(message, delay = 1500) {
+      async function simulateTyping(message, delay = 1000) {
         // Calcular tempo de digitação baseado no tamanho da mensagem
         const typingTime = Math.min(Math.max(message.length * 30, 1000), 4000); // Entre 1 e 4 segundos
         showTypingIndicator();
