@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-    <title>Chat com Suellen</title>
+    <title>Chat Hot com Suellen</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0"></script>
@@ -197,8 +197,54 @@
         width: 16px;
         height: 16px;
       }
-      #uploadImage {
+      #uploadImage, #uploadComprovanteFoto, #uploadComprovantePDF {
         display: none;
+      }
+      .pix-info {
+        background-color: #3a3a4a;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+      }
+      .pix-info p {
+        margin: 5px 0;
+      }
+      .pix-info strong {
+        color: #ab47bc;
+      }
+      .comprovante-container {
+        margin-top: 15px;
+      }
+      .comprovante-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        margin-top: 10px;
+        border: 1px solid #9c27b0;
+      }
+      .success-message {
+        color: #4caf50;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+      .error-message {
+        color: #f44336;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+      .pdf-warning {
+        background-color: #3a3a4a;
+        color: #ff9800;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      .upload-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
       }
       .photo-package {
         margin-top: 15px;
@@ -285,19 +331,18 @@
         transform: translateY(-50%);
         pointer-events: none;
       }
-      .attachment-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        margin-right: 8px;
-      }
-      .attachment-button img {
-        width: 24px;
-        height: 24px;
-      }
       @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.3; }
+      }
+      .send-photo-btn {
+        position: absolute;
+        left: 15px;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        top: 50%;
+        transform: translateY(-50%);
       }
     </style>
   </head>
@@ -309,15 +354,14 @@
       </div>
       <div class="chat-body" id="chatBody"></div>
       <div class="chat-footer">
-        <button class="attachment-button" id="attachButton">
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTE2LjUsNkMxNCwxNiAxMsMTYgNSwxN0w3LDE1TDE2LjUsNk0xOCw0TDIwLDZDMTksMjEgMTgsMjIgMTIsMTkuNUw5LjUsMTdMMTUsMTEuNUwxOCw0WiIvPjwvc3ZnPg==" alt="Anexar">
-        </button>
-        <input type="file" id="uploadImage" accept="image/*" style="display: none">
+        <img src="enviarfoto.webp" alt="Enviar foto" class="send-photo-btn" id="sendPhotoBtn">
         <img src="gravaperson.webp" alt="Gravar" class="mic-icon" id="micIcon">
+        <span class="user-recording-time" id="recordingTime" style="display: none;">0:00</span>
         <input type="text" id="userInput" placeholder="Digite sua mensagem..." oninput="updateActionIcon()" onkeypress="handleKeyPress(event)">
         <button id="actionButton" title="Gravar ou enviar">
           <img id="actionIcon" src="gravacao.webp" alt="Ícone">
         </button>
+        <input type="file" accept="image/*" id="uploadImage" style="display: none" />
       </div>
     </div>
 
@@ -327,24 +371,30 @@
       
       const PIX_KEY = '98981420070';
       const RECEIVER_NAME = 'Antonio Renimar Pinheiro Almeida';
-      const PHOTOS_PER_PACKAGE = 5;
+      const RECEIVER_KEYWORDS = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+      const PHOTO_PRICE = 2;
       
       let isWaitingResponse = false;
       let typingEl = null;
       let typingTimeout = null;
       let currentPhotoIndex = 1;
       let isWaitingPayment = false;
+      let comprovanteUploaded = false;
+      let isWaitingImage = false;
       let pipeline = null;
       let recognition;
       let userName = null;
-      let conversationLevel = 0;
-      let askedForName = false;
       const actionButton = document.getElementById('actionButton');
       const actionIcon = document.getElementById('actionIcon');
       const userInput = document.getElementById('userInput');
       const micIcon = document.getElementById('micIcon');
-      const attachButton = document.getElementById('attachButton');
+      const recordingTime = document.getElementById('recordingTime');
+      const sendPhotoBtn = document.getElementById('sendPhotoBtn');
       const uploadImage = document.getElementById('uploadImage');
+      let recordingStartTime = null;
+      let recordingTimer = null;
+      let activeAudio = null;
+      let audioEndListener = null;
       let initialMessageSent = false;
 
       // Configuração do reconhecimento de voz
@@ -355,12 +405,16 @@
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.onstart = () => {
-          micIcon.style.display = 'block';
-          userInput.placeholder = '';
+          startRecordingUI();
+          recordingStartTime = new Date();
+          updateRecordingTime();
         };
         recognition.onend = () => {
-          micIcon.style.display = 'none';
-          userInput.placeholder = 'Digite sua mensagem...';
+          stopRecordingUI();
+          if (recordingTimer) {
+            clearInterval(recordingTimer);
+            recordingTimer = null;
+          }
         };
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
@@ -368,6 +422,40 @@
           updateActionIcon();
           sendMessage();
         };
+      }
+
+      // Configurar botão de enviar foto
+      sendPhotoBtn.addEventListener('click', () => {
+        uploadImage.click();
+      });
+
+      uploadImage.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          handleUserPhotoUpload(file);
+        }
+      });
+
+      function startRecordingUI() {
+        micIcon.style.display = 'block';
+        recordingTime.style.display = 'block';
+        userInput.placeholder = '';
+      }
+
+      function stopRecordingUI() {
+        micIcon.style.display = 'none';
+        recordingTime.style.display = 'none';
+        userInput.placeholder = 'Digite sua mensagem...';
+      }
+
+      function updateRecordingTime() {
+        recordingTimer = setInterval(() => {
+          const now = new Date();
+          const elapsed = Math.floor((now - recordingStartTime) / 1000);
+          const minutes = Math.floor(elapsed / 60);
+          const seconds = elapsed % 60;
+          recordingTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
       }
 
       function updateActionIcon() {
@@ -388,16 +476,6 @@
         }
       });
 
-      attachButton.addEventListener('click', () => {
-        uploadImage.click();
-      });
-
-      uploadImage.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-          handleImageUpload(e.target.files[0]);
-        }
-      });
-
       // Inicializar o modelo de reconhecimento de imagem
       async function initializeImageRecognition() {
         try {
@@ -415,14 +493,66 @@
       window.onload = async () => {
         await initializeImageRecognition();
         
-        // Enviar mensagem inicial após 2 segundos
+        // Enviar mensagem inicial após 1 segundo
         setTimeout(() => {
           if (!initialMessageSent && document.getElementById('chatBody').children.length === 0) {
-            simulateTyping("Oiê, gato! Tudo bem com você? 😘", 2000);
+            simulateTyping("Oiê, gato! Tudo bem com você? 🥰", 2000);
             initialMessageSent = true;
           }
-        }, 2000);
+        }, 1000);
       };
+
+      async function handleUserPhotoUpload(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const imageData = e.target.result;
+          
+          // Mostrar a imagem enviada pelo usuário
+          const previewHTML = `
+            <div class="comprovante-container">
+              <img src="${imageData}" class="comprovante-preview">
+            </div>
+          `;
+          appendMessage("user", previewHTML);
+          
+          // Analisar a imagem
+          showTypingIndicator();
+          
+          // Simular análise da imagem (na prática, você poderia usar o modelo de IA aqui)
+          setTimeout(() => {
+            hideTypingIndicator();
+            
+            // Respostas para fotos de pau/rola
+            const dickResponses = [
+              "Nossa, que rola gostosa! 🤤 Quero sentar e rebolar nessa pica gostosa... 😈",
+              "Meu Deus, que pau lindo! Já estou imaginando ele todo dentro de mim... 🥵",
+              "Hmm, que delícia de rola! Me deixa molhadinha só de imaginar ele entrando... 💦",
+              "Que pica maravilhosa! Adoraria chupar ela todinha e depois sentar bem gostoso... 😏",
+              "Nossa, que tesão de pau! Me deixa louca de vontade... Quero ele bem fundo em mim! 😫"
+            ];
+            
+            const randomResponse = dickResponses[Math.floor(Math.random() * dickResponses.length)];
+            simulateTyping(randomResponse, 1500);
+            
+            // Perguntar se quer ver fotos dela
+            setTimeout(() => {
+              simulateTyping("Quer ver umas fotos minhas bem gostosas? São R$ 2 por foto... Quantas você quer?", 2000);
+              
+              appendMessage("bot", `
+                <div class="option-buttons">
+                  <button class="option-button" onclick="handlePhotoInterest('1 foto')">1 foto (R$ 2)</button>
+                  <button class="option-button" onclick="handlePhotoInterest('2 fotos')">2 fotos (R$ 4)</button>
+                  <button class="option-button" onclick="handlePhotoInterest('3 fotos')">3 fotos (R$ 6)</button>
+                  <button class="option-button" onclick="handlePhotoInterest('5 fotos')">5 fotos (R$ 10)</button>
+                </div>
+                <div class="option-buttons">
+                  <button class="option-button" onclick="handleOptionClick('Continuar conversando')">💬 Continuar conversando</button>
+                </div>`);
+            }, 2000);
+          }, 3000);
+        };
+        reader.readAsDataURL(file);
+      }
 
       async function analyzeImage(imageData) {
         try {
@@ -443,63 +573,327 @@
         reader.onload = async function(e) {
           const imageData = e.target.result;
           
+          // Mostrar a imagem enviada pelo usuário
           const previewHTML = `
-            <div>
-              <img src="${imageData}" class="preview-image">
+            <div class="comprovante-container">
+              <img src="${imageData}" class="comprovante-preview">
             </div>
           `;
           appendMessage("user", previewHTML);
           
+          // Analisar a imagem
           showTypingIndicator();
           const imageDescription = await analyzeImage(imageData);
           hideTypingIndicator();
           
           if (imageDescription) {
-            if (imageDescription.toLowerCase().includes('penis') || 
-                imageDescription.toLowerCase().includes('dick') || 
-                imageDescription.toLowerCase().includes('pau')) {
-              // Resposta para foto de pau
-              const responses = [
-                "Nossa, que pau gostoso... 🤤 Me deixa com vontade de brincar com ele... 😈",
-                "Hmm, que delícia de pau... Já estou imaginando ele dentro de mim... 🥵",
-                "Que tesão de pau! Me deixa toda molhadinha só de imaginar ele me comendo... 💦",
-                "Nossa, com um pau desses eu ia ficar de quatro na hora... Quero sentir ele todinho dentro de mim! 😫"
-              ];
-              
-              const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-              await simulateTyping(randomResponse, 1500);
-              
-              // Oferecer fotos após ver foto de pau
-              await simulateTyping("Quer ver umas fotos minhas bem gostosas? Me manda quanto você quer pagar que eu te mando umas coisinhas especiais... 😏", 2000);
-            } else {
-              // Resposta para outras fotos
-              const responses = [
-                `Adorei o que vejo... ${imageDescription.toLowerCase()} é tão excitante, não acha? 😏`,
-                `Hmm, ${imageDescription.toLowerCase()}... Você sabe como deixar uma garota curiosa, hein? 😉`,
-                `Que interessante... ${imageDescription.toLowerCase()} me faz imaginar tantas possibilidades... 😈`,
-                `Você tem bom gosto! ${imageDescription.toLowerCase()} é algo que realmente me chama atenção... 😘`
-              ];
-              
-              const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-              await simulateTyping(randomResponse, 1500);
-              
-              // Perguntar o nome de forma natural
-              if (!userName) {
-                await simulateTyping("Qual é o seu nome mesmo, meu bem? ☺️", 1500);
-              } else {
-                await simulateTyping(`${userName}, quer ver umas fotos minhas bem gostosas? Me diz quanto quer pagar que eu te mando umas coisinhas... 😏`, 2000);
-              }
-            }
-          } else {
-            // Caso não consiga analisar a imagem
-            await simulateTyping("Que imagem interessante... Me conta mais sobre isso? 😊", 1500);
+            // Gerar resposta provocativa baseada na descrição da imagem
+            const responses = [
+              `Adorei o que vejo... ${imageDescription.toLowerCase()} é tão excitante, não acha? 😏`,
+              `Hmm, ${imageDescription.toLowerCase()}... Você sabe como deixar uma garota curiosa, hein? 😉`,
+              `Que interessante... ${imageDescription.toLowerCase()} me faz imaginar tantas possibilidades... 😈`,
+              `Você tem bom gosto! ${imageDescription.toLowerCase()} é algo que realmente me chama atenção... 😘`,
+              `Nossa, ${imageDescription.toLowerCase()}... Você está tentando me provocar? Porque está funcionando... 😊`
+            ];
             
-            if (!userName) {
-              await simulateTyping("Aliás, qual é o seu nome mesmo, gato? ☺️", 1500);
-            }
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            await simulateTyping(randomResponse, 1500);
+            
+            // Perguntar se quer ver fotos
+            await simulateTyping("Quer ver umas fotos minhas bem especiais? São R$ 2 por foto... Quantas você quer?", 2000);
+            
+            appendMessage("bot", `
+              <div class="option-buttons">
+                <button class="option-button" onclick="handlePhotoInterest('1 foto')">1 foto (R$ 2)</button>
+                <button class="option-button" onclick="handlePhotoInterest('2 fotos')">2 fotos (R$ 4)</button>
+                <button class="option-button" onclick="handlePhotoInterest('3 fotos')">3 fotos (R$ 6)</button>
+                <button class="option-button" onclick="handlePhotoInterest('5 fotos')">5 fotos (R$ 10)</button>
+              </div>
+              <div class="option-buttons">
+                <button class="option-button" onclick="handleOptionClick('Continuar conversando')">💬 Continuar conversando</button>
+              </div>`);
+          } else {
+            await simulateTyping("Que imagem interessante... Mas sabe o que seria mais interessante? Ver umas fotos minhas bem especiais... Quer? São R$ 2 por foto... Quantas você quer?", 2000);
+            
+            appendMessage("bot", `
+              <div class="option-buttons">
+                <button class="option-button" onclick="handlePhotoInterest('1 foto')">1 foto (R$ 2)</button>
+                <button class="option-button" onclick="handlePhotoInterest('2 fotos')">2 fotos (R$ 4)</button>
+                <button class="option-button" onclick="handlePhotoInterest('3 fotos')">3 fotos (R$ 6)</button>
+                <button class="option-button" onclick="handlePhotoInterest('5 fotos')">5 fotos (R$ 10)</button>
+              </div>
+              <div class="option-buttons">
+                <button class="option-button" onclick="handleOptionClick('Continuar conversando')">💬 Continuar conversando</button>
+              </div>`);
           }
         };
         reader.readAsDataURL(file);
+      }
+
+      async function handlePhotoInterest(option) {
+        appendMessage("user", option);
+        
+        // Extrair quantidade de fotos e calcular valor
+        const quantity = parseInt(option);
+        const totalPrice = quantity * PHOTO_PRICE;
+        
+        // Resposta envolvente para vender as fotos
+        await simulateTyping(`Ah, meu amor, para eu te mandar essas ${quantity > 1 ? quantity + ' fotinhas' : 'fotinha'} que às vezes dão um trabalhinho, você precisa me passar pelo menos um pix de R$ ${totalPrice}, tá bom? São ${quantity} ${quantity > 1 ? 'fotos' : 'foto'} linda${quantity > 1 ? 's' : ''} só para você... rsrs`, 2000);
+        await simulateTyping(`Depois que você fizer o pix e me mandar o comprovante, eu te mando as fotos na hora! Prometo que vale a pena... 😘`, 2000);
+        
+        showPaymentOptions(quantity, totalPrice);
+      }
+
+      async function showPaymentOptions(quantity, totalPrice) {
+        isWaitingPayment = true;
+        comprovanteUploaded = false;
+        
+        const pixInfoHTML = `
+          <div class="pix-info">
+            <p><strong>📌 Chave Pix (CPF):</strong> ${PIX_KEY}</p>
+            <p><strong>📌 Nome:</strong> ${RECEIVER_NAME}</p>
+            <p><strong>🟢 Obs.:</strong> O nome que aparece é do meu corninho, tá bom? Pode fazer tranquilo(a), tá tudo certinho! rsrs 😜</p>
+            <p><strong>💰 Valor:</strong> R$ ${totalPrice},00</p>
+            <div class="pdf-warning">
+              <strong>📄 Atenção:</strong> Você pode enviar o comprovante em imagem (JPG/PNG) ou em PDF. Assim que for verificado, as fotos serão liberadas automaticamente.
+            </div>
+          </div>
+          <div class="comprovante-container">
+            <div class="upload-buttons">
+              <label for="uploadComprovanteFoto" class="upload-label">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik00LDVIMjBWMThINFY1TTUsOEEyLDggMiA4QTIsMiAwIDAgMSA1LDZBMiwyIDAgMCwxIDcsOEEyLDIgMCAwLDEgNSwxMEEyLDIgMCAwLDEgMyw4QTIsMiAwIDAsMSA1LDZNNSwxMkwyMSwxMlYxOUg1VjEyWiIvPjwvc3ZnPg==" alt="Enviar imagem" />
+                Enviar Comprovante em Foto
+              </label>
+              <label for="uploadComprovantePDF" class="upload-label">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMyw5SDE4LjVMMTMsMy41VjlNMTksMTBWMTlINVY1SDEyVjE5SDE5VjEwSDE5TTIwLDJIMTlWNkg5VjJIN0YyMkgxN1YyMkgyMFYyWiIvPjwvc3ZnPg==" alt="Enviar PDF" />
+                Enviar Comprovante em PDF
+              </label>
+            </div>
+            <input type="file" accept="image/*" id="uploadComprovanteFoto" style="display: none" />
+            <input type="file" accept=".pdf" id="uploadComprovantePDF" style="display: none" />
+          </div>
+        `;
+        
+        appendMessage("bot", pixInfoHTML);
+        
+        // Configurar os listeners para os uploads
+        document.getElementById('uploadComprovanteFoto').addEventListener('change', function(e) {
+          if (!comprovanteUploaded) {
+            handleComprovanteUpload(e, 'image', quantity, totalPrice);
+            comprovanteUploaded = true;
+          }
+        });
+        
+        document.getElementById('uploadComprovantePDF').addEventListener('change', function(e) {
+          if (!comprovanteUploaded) {
+            handleComprovanteUpload(e, 'pdf', quantity, totalPrice);
+            comprovanteUploaded = true;
+          }
+        });
+      }
+
+      async function handleComprovanteUpload(event, type, quantity, totalPrice) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+          if (type === 'pdf') {
+            await processPDFComprovante(file);
+          } else {
+            await processImageComprovante(file);
+          }
+          
+          appendMessage("bot", "🔄 Só um momento, meu amor... Estou validando seu pagamento. Assim que for confirmado, te mando as fotos! 😉");
+          
+          showTypingIndicator();
+          
+          if (type === 'pdf') {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let extractedText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const strings = textContent.items.map(item => item.str);
+              extractedText += strings.join(' ') + '\n';
+            }
+            
+            await verifyComprovanteText(extractedText, quantity, totalPrice);
+          } else {
+            const reader = new FileReader();
+            const imageData = await new Promise((resolve, reject) => {
+              reader.onload = e => resolve(e.target.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            await verifyComprovante(imageData, quantity, totalPrice);
+          }
+        } catch (error) {
+          console.error("Erro ao processar comprovante:", error);
+          hideTypingIndicator();
+          showComprovanteError(quantity, totalPrice);
+        }
+      }
+
+      async function processImageComprovante(file) {
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+          reader.onload = function(e) {
+            const previewHTML = `
+              <div class="comprovante-container">
+                <img src="${e.target.result}" class="comprovante-preview">
+              </div>
+            `;
+            appendMessage("user", previewHTML);
+            resolve();
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function processPDFComprovante(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        
+        const previewImage = canvas.toDataURL('image/jpeg');
+        
+        const previewHTML = `
+          <div class="comprovante-container">
+            <img src="${previewImage}" class="comprovante-preview">
+          </div>
+        `;
+        appendMessage("user", previewHTML);
+      }
+
+      async function verifyComprovante(imageData, quantity, totalPrice) {
+        try {
+          const { data: { text } } = await Tesseract.recognize(
+            imageData,
+            'por',
+            { logger: m => console.log(m) }
+          );
+          
+          await verifyComprovanteText(text, quantity, totalPrice);
+        } catch (error) {
+          console.error("Erro ao verificar comprovante:", error);
+          throw error;
+        }
+      }
+
+      async function verifyComprovanteText(text, quantity, totalPrice) {
+        hideTypingIndicator();
+        
+        // Verificar se o texto contém qualquer uma das palavras-chave do nome do recebedor e o valor correto
+        const normalizedText = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const hasReceiverName = RECEIVER_KEYWORDS.some(keyword => normalizedText.includes(keyword));
+        
+        const hasCorrectAmount = text.includes(`${totalPrice},00`) || 
+                               text.includes(`${totalPrice}.00`) || 
+                               text.includes(`R$ ${totalPrice}`) || 
+                               text.includes(`R$${totalPrice}`);
+        
+        if (hasReceiverName && hasCorrectAmount) {
+          // Mostrar mensagem de sucesso
+          const successHTML = `
+            <div class="success-message">
+              ✅ Pagamento confirmado! Obrigada, meu amor! 😘
+            </div>
+            <p>Aqui estão suas ${quantity > 1 ? quantity + ' fotos' : 'foto'} especiais... Espero que goste! 💋</p>
+          `;
+          appendMessage("bot", successHTML);
+          
+          // Mostrar as fotos
+          await deliverPhotos(quantity);
+        } else {
+          showComprovanteError(quantity, totalPrice);
+        }
+      }
+
+      async function deliverPhotos(quantity) {
+        const photoPackageHTML = `
+          <div class="photo-package">
+            <p>Pacote com ${quantity} ${quantity > 1 ? 'fotos' : 'foto'} especial${quantity > 1 ? 'is' : ''} para você:</p>
+            ${Array.from({length: quantity}, (_, i) => {
+              const photoNum = currentPhotoIndex + i;
+              return `<img src="foto${photoNum}.webp" class="preview-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzljMjdCMCI+PHBhdGggZD0iTTgsNUgxOEExLDcgMSAwLDEgMTksMTJWMThBMSwxIDAgMCwxIDE4LDE5SDhBNywwIDAgMCwxIDEsMTJWNUExLDEgMCAwLDEgOCw1TTEyLDEwQTIsMiAwIDAsMCAxMCwxMkEyLDIgMCAwLDAgMTIsMTRBMiwyIDAgMCwwIDE0LDEyQTIsMiAwIDAsMCAxMiwxMFoiLz48L3N2Zz4='">`;
+            }).join('')}
+            <p>Gostou do que viu? Quer mais fotos? 😏</p>
+            <div class="option-buttons">
+              <button class="option-button" onclick="handlePhotoInterest('1 foto')">1 foto (R$ 2)</button>
+              <button class="option-button" onclick="handlePhotoInterest('2 fotos')">2 fotos (R$ 4)</button>
+              <button class="option-button" onclick="handlePhotoInterest('3 fotos')">3 fotos (R$ 6)</button>
+              <button class="option-button" onclick="handlePhotoInterest('5 fotos')">5 fotos (R$ 10)</button>
+            </div>
+          </div>
+        `;
+        
+        appendMessage("bot", photoPackageHTML);
+        
+        // Atualizar o índice para o próximo pacote
+        currentPhotoIndex += quantity;
+        if (currentPhotoIndex > 100) currentPhotoIndex = 1; // Volta ao início se passar de 100 fotos
+        
+        // Resetar estado de pagamento
+        isWaitingPayment = false;
+        comprovanteUploaded = false;
+      }
+
+      function showComprovanteError(quantity, totalPrice) {
+        let errorMessage = '<div class="error-message">❌ Não consegui confirmar seu pagamento, amor</div>';
+        errorMessage += '<p>Por favor, verifique se:</p>';
+        errorMessage += '<ul>';
+        errorMessage += `<li>Você enviou o comprovante do Pix para a chave <strong>${PIX_KEY}</strong> (CPF)</li>`;
+        errorMessage += `<li>O valor está correto: <strong>R$ ${totalPrice},00</strong></li>`;
+        errorMessage += '</ul>';
+        errorMessage += '<p>Se já conferiu tudo e ainda assim não foi validado, pode enviar novamente o comprovante?</p>';
+        errorMessage += `
+          <div class="comprovante-container">
+            <div class="upload-buttons">
+              <label for="uploadComprovanteFoto" class="upload-label">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik00LDVIMjBWMThINFY1TTUsOEEyLDggMiA4QTIsMiAwIDAgMSA1LDZBMiwyIDAgMCwxIDcsOEEyLDIgMCAwLDEgNSwxMEEyLDIgMCAwLDEgMyw4QTIsMiAwIDAsMSA1LDZNNSwxMkwyMSwxMlYxOUg1VjEyWiIvPjwvc3ZnPg==" alt="Enviar imagem" />
+                Enviar Comprovante em Foto
+              </label>
+              <label for="uploadComprovantePDF" class="upload-label">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMyw5SDE4LjVMMTMsMy41VjlNMTksMTBWMTlINVY1SDEyVjE5SDE5VjEwSDE5TTIwLDJIMTlWNkg5VjJIN0YyMkgxN1YyMkgyMFYyWiIvPjwvc3ZnPg==" alt="Enviar PDF" />
+                Enviar Comprovante em PDF
+              </label>
+            </div>
+            <input type="file" accept="image/*" id="uploadComprovanteFoto" style="display: none" />
+            <input type="file" accept=".pdf" id="uploadComprovantePDF" style="display: none" />
+          </div>
+        `;
+        
+        appendMessage("bot", errorMessage);
+        
+        // Configurar novamente os listeners
+        comprovanteUploaded = false;
+        document.getElementById('uploadComprovanteFoto').addEventListener('change', function(e) {
+          if (!comprovanteUploaded) {
+            handleComprovanteUpload(e, 'image', quantity, totalPrice);
+            comprovanteUploaded = true;
+          }
+        });
+        
+        document.getElementById('uploadComprovantePDF').addEventListener('change', function(e) {
+          if (!comprovanteUploaded) {
+            handleComprovanteUpload(e, 'pdf', quantity, totalPrice);
+            comprovanteUploaded = true;
+          }
+        });
       }
 
       function handleKeyPress(event) {
@@ -518,175 +912,206 @@
         updateActionIcon();
         isWaitingResponse = true;
         
-        setTimeout(() => {
-          showTypingIndicator();
-          processUserMessage(text);
-        }, 800);
-      }
-
-      async function processUserMessage(text) {
+        // Mostrar indicador de digitação imediatamente
+        showTypingIndicator();
+        
         const lower = text.toLowerCase();
         const normalized = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         
-        // Captura do nome do usuário de forma natural
-        if (!userName) {
-          if (askedForName) {
-            // Se já perguntou o nome, assume que a resposta é o nome
-            userName = text.split(' ')[0]; // Pega a primeira palavra como nome
-            await simulateTyping(`Prazer em te conhecer, ${userName}! 😊 Me conta, o que te trouxe aqui hoje?`, 1500);
-            conversationLevel = 1;
-            isWaitingResponse = false;
-            return;
-          } else {
-            // Primeira vez perguntando o nome
-            askedForName = true;
-            await simulateTyping("Qual é o seu nome mesmo, meu bem? ☺️", 1500);
-            isWaitingResponse = false;
-            return;
+        // Capturar nome do usuário
+        if (!userName && (normalized.includes('meu nome é') || normalized.includes('eu sou') || normalized.includes('me chamo'))) {
+          const nameMatch = text.match(/(?:meu nome é|eu sou|me chamo)\s+([^\s,.!?]+)/i);
+          if (nameMatch && nameMatch[1]) {
+            userName = nameMatch[1];
           }
         }
         
-        // Respostas sobre informações pessoais
-        if (normalized.includes('quantos anos') || normalized.includes('idade')) {
-          await simulateTyping("Eu tenho 25 anos, meu amor! Estou no auge da minha beleza e energia! 😘", 1200);
+        // Responder a saudação inicial
+        if ((normalized.includes('tudo bem') || normalized.includes('tudo bom') || normalized.includes('estou bem') || 
+             normalized.includes('tô bem') || normalized.includes('to bem') || normalized.includes('estou ótimo')) && 
+            document.getElementById('chatBody').children.length <= 2) {
+          hideTypingIndicator();
+          await simulateTyping("Que bom que você está bem! 😊", 1500);
+          await simulateTyping("Qual é o seu nome mesmo, meu bem? ☺️", 2000);
           isWaitingResponse = false;
-          conversationLevel = Math.min(conversationLevel + 1, 5);
           return;
         }
         
-        if (normalized.includes('onde mora') || normalized.includes('de onde') || normalized.includes('cidade')) {
-          await simulateTyping("Eu moro em Florianópolis, Santa Catarina agora, mas nasci em Cachoeira de Itabuna, na Bahia! Adoro a praia aqui em Floripa! 🌊😊", 1500);
-          isWaitingResponse = false;
-          conversationLevel = Math.min(conversationLevel + 1, 5);
-          return;
-        }
-        
-        if (normalized.includes('solteira') || normalized.includes('namora') || normalized.includes('casada')) {
-          await simulateTyping(`Estou solteira e pronta para me divertir! 😉 E você, ${userName}, também está solteiro?`, 1500);
-          isWaitingResponse = false;
-          conversationLevel = Math.min(conversationLevel + 1, 5);
-          return;
-        }
-        
-        // Detecção de pedido de fotos ou valores
-        const priceMatch = normalized.match(/(\d+)\s*(reais|rs|r\$|pila|contos|fotos?|pacotes?|fts?)/i);
-        if (priceMatch) {
-          const value = parseInt(priceMatch[1]);
-          if (value > 0) {
-            const packages = Math.ceil(value / 10); // Assume R$10 por pacote
-            const quantity = packages * PHOTOS_PER_PACKAGE;
-            
-            await simulateTyping(`Ahh, ${userName}, com R$${value} eu te mando ${quantity} fotinhas bem gostosas... 😏`, 1500);
-            await simulateTyping(`Me faz um Pix de R$${value} pra essa chave aqui e eu já mando tudo pra você, tá bom? 😘`, 1500);
-            
-            const pixInfoHTML = `
-              <div style="background-color: #3a3a4a; padding: 15px; border-radius: 10px; margin-top: 10px;">
-                <p><strong>📌 Chave Pix (CPF):</strong> ${PIX_KEY}</p>
-                <p><strong>📌 Nome:</strong> ${RECEIVER_NAME}</p>
-                <p><strong>💰 Valor:</strong> R$ ${value},00</p>
-                <p style="margin-top: 10px;">Depois que o Pix cair, me manda o comprovante que eu te mando as fotinhas na hora! Prometo que vale a pena... 😈</p>
-              </div>
-              <div style="margin-top: 15px;">
-                <label for="uploadImage" class="upload-label">
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik00LDVIMjBWMThINFY1TTUsOEEyLDggMiA4QTIsMiAwIDAgMSA1LDZBMiwyIDAgMCwxIDcsOEEyLDIgMCAwLDEgNSwxMEEyLDIgMCAwLDEgMyw4QTIsMiAwIDAsMSA1LDZNNSwxMkwyMSwxMlYxOUg1VjEyWiIvPjwvc3ZnPg==" alt="Enviar imagem" />
-                  Enviar Comprovante
-                </label>
-              </div>
-            `;
-            
-            appendMessage("bot", pixInfoHTML);
-            
-            isWaitingPayment = true;
-            isWaitingResponse = false;
-            return;
-          }
-        }
-        
-        // Elogios ou mensagens sensuais
-        const isFlirtyMessage = normalized.includes('gostosa') || normalized.includes('linda') || 
-                               normalized.includes('bela') || normalized.includes('sexy') ||
-                               normalized.includes('delícia') || normalized.includes('maravilhosa') ||
-                               normalized.includes('tesão') || normalized.includes('gata') ||
-                               normalized.includes('gostosura') || normalized.includes('perfeita');
-        
-        if (isFlirtyMessage) {
+        // Responder a pergunta sobre como está
+        if (normalized.includes('como você está') || normalized.includes('como vc está') || 
+            normalized.includes('tá bem') || normalized.includes('ta bem') || 
+            normalized.includes('como vai') || normalized.includes('tudo bem com vc')) {
+          hideTypingIndicator();
           const responses = [
-            "Hmm... você sabe como elogiar uma garota, né? Me deixa toda arrepiada... 😏",
-            "Nossa, com esses elogios você está me deixando com vontade de te mostrar mais... 😘",
-            "Que delícia de elogio! Você me deixa toda molhadinha... 💦",
-            "Adoro quando me elogiam assim... me dá umas ideias... rsrs 😈"
+            "Estou ótima, amor! Pensando em você... 😘",
+            "Tô bem gostosinha aqui, querendo conversar com você... 😏",
+            "Estou ótima, meu bem! E você, como está? 😊",
+            "Tô aqui, toda molhadinha pensando em você... E aí, como vai? 😈",
+            "Estou bem, gato! Só faltando você aqui comigo... 🥰"
           ];
-          
           await simulateTyping(responses[Math.floor(Math.random() * responses.length)], 1500);
-          
-          // Oferecer fotos após elogio (50% de chance)
-          if (Math.random() > 0.5) {
-            await simulateTyping(`${userName}, quer ver umas fotos minhas bem gostosas? Me diz quanto quer pagar que eu te mando umas coisinhas... 😏`, 2000);
-          }
-          
           isWaitingResponse = false;
-          conversationLevel = Math.min(conversationLevel + 1, 5);
           return;
         }
         
-        // Resposta padrão baseada no nível da conversa
-        await generateAppropriateResponse(text);
+        // Responder a pergunta sobre o que está fazendo
+        if (normalized.includes('tá fazendo o que') || normalized.includes('ta fazendo o que') || 
+            normalized.includes('o que está fazendo') || normalized.includes('o que vc está fazendo')) {
+          hideTypingIndicator();
+          const responses = [
+            "Estou aqui de biquíni, tomando um solzinho e pensando em você... 😉",
+            "Tô na cama, toda arrepiada imaginando umas coisinhas com você... 😈",
+            "Estou vendo um filme, mas prefiro ver você... 😘",
+            "Tô aqui, me tocando e pensando em você... Quer me ajudar? 😏",
+            "Estou no celular, esperando sua mensagem... E você, o que está fazendo? 😊"
+          ];
+          await simulateTyping(responses[Math.floor(Math.random() * responses.length)], 1500);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Responder a pergunta sobre homem casado
+        if (normalized.includes('homem casado') || normalized.includes('vc curte homem casado') || 
+            normalized.includes('você curte homem casado') || normalized.includes('gosta de homem casado')) {
+          hideTypingIndicator();
+          const responses = [
+            "Hmm, homem casado é mais gostoso... Tem experiência e sabe o que quer! 😈",
+            "Adoro um homem casado... É mais safado e cheio de tesão reprimido! 😏",
+            "Homem casado é meu fraco... Principalmente se for infeliz no casamento! rsrs 😘",
+            "Nossa, homem casado me deixa louca... Acho excitante saber que está me traindo comigo! 😈",
+            "Curto sim, amor... Acho que todo homem merece uma safadinha como eu, mesmo sendo casado! 😉"
+          ];
+          await simulateTyping(responses[Math.floor(Math.random() * responses.length)], 1500);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Responder a pergunta sobre idade
+        if (normalized.includes('quantos anos') || normalized.includes('qual sua idade') || 
+            normalized.includes('quantos anos vc tem') || normalized.includes('quantos anos você tem')) {
+          hideTypingIndicator();
+          const responses = [
+            "Tenho 24 aninhos, amor... Na idade perfeita pra te deixar louco! 😘",
+            "Acabei de fazer 24 anos... E você, quantos anos tem? 😊",
+            "Tenho 24 anos, gato... Na flor da idade pra te satisfazer! 😈",
+            "24 aninhos, meu bem... Já sou bem experiente em algumas coisinhas... rsrs 😏",
+            "Tenho 24 anos, amor... E você? Me conta mais sobre você! 😉"
+          ];
+          await simulateTyping(responses[Math.floor(Math.random() * responses.length)], 1500);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Perguntas sobre Suellen
+        if (normalized.includes('quem e suellen') || normalized.includes('quem é suellen') ||
+            normalized.includes('quem e voce') || normalized.includes('quem é você') ||
+            normalized.includes('quem e vc') || normalized.includes('quem é vc') ||
+            (normalized.includes('de onde') && normalized.includes('suellen')) ||
+            normalized.includes('onde mora') || normalized.includes('onde vive') ||
+            normalized.includes('vc é de onde') || normalized.includes('você é de onde')) {
+          hideTypingIndicator();
+          await simulateTyping("Eu sou a Suellen, uma garota que adora conversas quentes e fotos provocantes... Tenho 24 anos, sou de Florianópolis agora, mas nasci em Cachoeira de Itabuna, na Bahia. Adoro praia, música e conversas interessantes como a nossa! 😘", 2000);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // História pessoal
+        if (normalized.includes('história') || normalized.includes('vida') || normalized.includes('passado') ||
+            normalized.includes('como você começou') || normalized.includes('como vc começou')) {
+          hideTypingIndicator();
+          await simulateTyping("Ah, quer saber da minha história? Eu era uma garota tímida na Bahia, até que descobri meu lado mais ousado... rsrs", 2000);
+          await simulateTyping("Me mudei pra Floripa pra viver mais livre, conhecer gente interessante como você! Foi a melhor decisão da minha vida! 😊", 2000);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Pedido de fotos
+        if (normalized.includes('foto') || normalized.includes('fotos') || normalized.includes('fotinha') || 
+            normalized.includes('fotinhas') || normalized.includes('ver foto') || normalized.includes('ver fotos') ||
+            normalized.includes('me manda foto') || normalized.includes('me manda fotos') || normalized.includes('manda foto') ||
+            normalized.match(/\b(\d+)\s*fotos?\b/i)) {
+          hideTypingIndicator();
+          
+          // Extrair quantidade de fotos solicitadas
+          const quantityMatch = normalized.match(/\b(\d+)\s*fotos?\b/i);
+          let quantity = 1;
+          let optionText = '1 foto';
+          
+          if (quantityMatch) {
+            quantity = parseInt(quantityMatch[1]);
+            if (quantity > 10) quantity = 10; // Limite máximo
+            optionText = quantity + (quantity > 1 ? ' fotos' : ' foto');
+          }
+          
+          await handlePhotoInterest(optionText);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Se não for nenhum dos casos acima, usa a resposta personalizada
+        hideTypingIndicator();
+        await generateFlirtyResponse(text);
         isWaitingResponse = false;
       }
 
-      async function generateAppropriateResponse(text) {
-        const responsesByLevel = [
-          // Nível 0-1: Respostas iniciais
-          [
-            `Que legal conversar com você, ${userName}! O que você gosta de fazer no seu tempo livre? 😊`,
-            `Adoro conhecer pessoas novas como você, ${userName}. Me conta mais sobre você! 😘`,
-            `${userName}, você parece ser muito interessante! O que te trouxe pra conversar comigo hoje? 😉`,
-            `Eu adoro conversar, ${userName}! Me conta, qual seu signo? 😊`
-          ],
-          // Nível 2: Respostas mais pessoais
-          [
-            `Hmm, gosto do jeito que você conversa, ${userName}... Me deixa curiosa pra saber mais sobre você! 😉`,
-            `Você tem um jeito tão cativante de falar, ${userName}... Me conta, o que te faz feliz? 😘`,
-            `Nossa, com essa conversa você está me deixando com vontade de te conhecer melhor, ${userName}... 😏`,
-            `Adoro essa conexão que estamos criando, ${userName}... Você é tão interessante! 😊`
-          ],
-          // Nível 3: Respostas provocantes
-          [
-            `Você sabe como manter uma garota interessada, não é, ${userName}? Me diz, o que mais você quer saber? 😉`,
-            `Hmm, com esse papo você está me deixando com vontade de te mostrar umas coisinhas... Quer ver, ${userName}? 😘`,
-            `Nossa, ${userName}, só de imaginar nossa conversa me dá umas ideias... rsrs 😏`,
-            `Você tem um jeito tão envolvente, ${userName}... Me deixa com vontade de me aproximar mais! 😊`
-          ],
-          // Nível 4: Respostas sensuais
-          [
-            `Eu quero gozar... 😏🤤`,
-            `Tô louca pra sentar no seu pau... 😈🔥`,
-            `Quero te dar de todas as formas possíveis... 🥵`,
-            `Quero ficar de quatro pra você... 😏`
-          ],
-          // Nível 5: Respostas explícitas
-          [
-            `Quero ver teu pau... Manda uma foto pra mim? 🤤`,
-            `Nossa, só de imaginar você me comendo já fico toda molhada... 💦`,
-            `Você me deixa com tanto tesão que até me tremo toda... 😫`,
-            `Quero sentir você dentro de mim até eu gozar... 🥴`
-          ]
+      async function generateFlirtyResponse(text) {
+        // Respostas picantes se a conversa estiver mais íntima
+        const spicyResponses = [
+          "Eu quero gozar... 😏🤤",
+          "Tô louca pra sentar no seu pau... 😈🔥",
+          "Quero te dar de todas as formas possíveis... 🥵",
+          "Quero ficar de quatro pra você... 😏",
+          "Quero ver teu pau... Manda uma foto pra mim? 🤤",
+          "Nossa, só de imaginar você me comendo já fico toda molhada... 💦",
+          "Você me deixa com tanto tesão que até me tremo toda... 😫",
+          "Quero sentir você dentro de mim até eu gozar... 🥴",
+          "Me diz como você me quer... Por trás? De quatro? Eu topo tudo! 😈",
+          "Adoro um homem que sabe o que quer... E você quer me comer, não é? 😏"
         ];
         
-        const level = Math.min(conversationLevel, responsesByLevel.length - 1);
-        const responses = responsesByLevel[level];
+        // Respostas mais leves para início de conversa
+        const lightResponses = [
+          `Hmm, gosto do que está dizendo... Me conta mais sobre você${userName ? ', ' + userName : ''}! 😉`,
+          `Você tem um jeito tão interessante de falar... Me deixa curiosa para saber mais${userName ? ', ' + userName : ''}! 😘`,
+          `Adoro essa energia que você está trazendo... Me diz, o que mais você gosta${userName ? ', ' + userName : ''}? 😊`,
+          `Nossa, com essa conversa você está me deixando com vontade de te conhecer melhor${userName ? ', ' + userName : ''}... 😏`,
+          `Você tem um jeito tão cativante... Me conta, o que te faz sentir mais vivo${userName ? ', ' + userName : ''}? 😈`,
+          `Adoro quando a conversa fica assim... Quer me contar um segredo${userName ? ', ' + userName : ''}? 😉`,
+          `Hmm, com esse papo você está me deixando com vontade de te mostrar umas coisinhas... Quer ver${userName ? ', ' + userName : ''}? 😘`,
+          `Você sabe como manter uma garota interessada, não é${userName ? ', ' + userName : ''}? Me diz, o que mais você quer saber? 😊`,
+          `Adoro essa conexão que estamos criando... Quer levar isso para um nível mais íntimo${userName ? ', ' + userName : ''}? 😏`,
+          `Com esse papo, você está me deixando com vontade de te presentear com umas fotos especiais... Quer${userName ? ', ' + userName : ''}? 😈`
+        ];
+        
+        // Escolher entre respostas picantes ou leves baseado no nível da conversa
+        const useSpicy = Math.random() > 0.7 && document.getElementById('chatBody').children.length > 5;
+        const responses = useSpicy ? spicyResponses : lightResponses;
         const randomResponse = responses[Math.floor(Math.random() * responses.length)];
         
-        await simulateTyping(randomResponse, 1500 + Math.random() * 1000);
+        await simulateTyping(randomResponse, 1500);
         
-        // Aumentar o nível da conversa gradualmente
+        // Oferecer fotos após algumas mensagens
         if (Math.random() > 0.7) {
-          conversationLevel = Math.min(conversationLevel + 1, 5);
+          await simulateTyping("Quer ver umas fotos minhas bem especiais? São R$ 2 por foto... Quantas você quer?", 2000);
+          
+          appendMessage("bot", `
+            <div class="option-buttons">
+              <button class="option-button" onclick="handlePhotoInterest('1 foto')">1 foto (R$ 2)</button>
+              <button class="option-button" onclick="handlePhotoInterest('2 fotos')">2 fotos (R$ 4)</button>
+              <button class="option-button" onclick="handlePhotoInterest('3 fotos')">3 fotos (R$ 6)</button>
+              <button class="option-button" onclick="handlePhotoInterest('5 fotos')">5 fotos (R$ 10)</button>
+            </div>
+            <div class="option-buttons">
+              <button class="option-button" onclick="handleOptionClick('Continuar conversando')">💬 Continuar conversando</button>
+            </div>`);
         }
+      }
+
+      function handleOptionClick(option) {
+        appendMessage("user", option);
         
-        // Oferecer fotos se o nível for alto
-        if (conversationLevel >= 2 && Math.random() > 0.6) {
-          await simulateTyping(`${userName}, quer ver umas fotos minhas bem gostosas? Me diz quanto quer pagar que eu te mando umas coisinhas... 😏`, 2000);
+        if (option === 'Continuar conversando') {
+          simulateTyping(`Adoro continuar conversando com você${userName ? ', ' + userName : ''}... Me conta, o que você gosta de fazer nos seus momentos livres? 😊`, 1500);
         }
       }
 
@@ -705,14 +1130,11 @@
           typingEl.remove();
           typingEl = null;
         }
-        if (typingTimeout) {
-          clearTimeout(typingTimeout);
-          typingTimeout = null;
-        }
       }
 
-      async function simulateTyping(message, duration = 1500) {
-        const typingTime = Math.min(Math.max(message.length * 30, 1000), duration);
+      async function simulateTyping(message, delay = 1500) {
+        // Calcular tempo de digitação baseado no tamanho da mensagem
+        const typingTime = Math.min(Math.max(message.length * 50, 1500), 5000); // Entre 1.5 e 5 segundos
         showTypingIndicator();
         await new Promise(r => setTimeout(r, typingTime));
         hideTypingIndicator();
