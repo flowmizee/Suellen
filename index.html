@@ -284,53 +284,6 @@
         transform: translateY(-50%);
         pointer-events: none;
       }
-      .bot-recording-indicator {
-        background-color: white;
-        padding: 8px 12px;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        align-self: flex-start;
-        max-width: 40px;
-        position: relative;
-        box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-      }
-      .bot-recording-indicator::after {
-        content: '';
-        position: absolute;
-        left: -8px;
-        top: 8px;
-        width: 0;
-        height: 0;
-        border-top: 8px solid transparent;
-        border-right: 8px solid white;
-        border-bottom: 8px solid transparent;
-      }
-      .bot-recording-img {
-        width: 32px;
-        height: 32px;
-        animation: pulse 1.5s infinite ease-in-out;
-      }
-      .user-recording-indicator {
-        position: absolute;
-        left: 35px;
-        display: flex;
-        align-items: center;
-      }
-      .user-recording-img {
-        width: 24px;
-        height: 24px;
-        margin-right: 8px;
-        animation: pulse 1.5s infinite ease-in-out;
-      }
-      .user-recording-time {
-        font-size: 14px;
-        color: #555;
-        position: absolute;
-        left: 45px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-      }
       @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.3; }
@@ -346,7 +299,6 @@
       <div class="chat-body" id="chatBody"></div>
       <div class="chat-footer">
         <img src="gravaperson.webp" alt="Gravar" class="mic-icon" id="micIcon">
-        <span class="user-recording-time" id="recordingTime" style="display: none;">0:00</span>
         <input type="text" id="userInput" placeholder="Digite sua mensagem..." oninput="updateActionIcon()" onkeypress="handleKeyPress(event)">
         <button id="actionButton" title="Gravar ou enviar">
           <img id="actionIcon" src="gravacao.webp" alt="Ícone">
@@ -373,15 +325,11 @@
       let isWaitingImage = false;
       let pipeline = null;
       let recognition;
+      let userName = '';
       const actionButton = document.getElementById('actionButton');
       const actionIcon = document.getElementById('actionIcon');
       const userInput = document.getElementById('userInput');
       const micIcon = document.getElementById('micIcon');
-      const recordingTime = document.getElementById('recordingTime');
-      let recordingStartTime = null;
-      let recordingTimer = null;
-      let activeAudio = null;
-      let audioEndListener = null;
 
       // Configuração do reconhecimento de voz
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -391,16 +339,12 @@
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.onstart = () => {
-          startRecordingUI();
-          recordingStartTime = new Date();
-          updateRecordingTime();
+          micIcon.style.display = 'block';
+          userInput.placeholder = '';
         };
         recognition.onend = () => {
-          stopRecordingUI();
-          if (recordingTimer) {
-            clearInterval(recordingTimer);
-            recordingTimer = null;
-          }
+          micIcon.style.display = 'none';
+          userInput.placeholder = 'Digite sua mensagem...';
         };
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
@@ -408,28 +352,6 @@
           updateActionIcon();
           sendMessage();
         };
-      }
-
-      function startRecordingUI() {
-        micIcon.style.display = 'block';
-        recordingTime.style.display = 'block';
-        userInput.placeholder = '';
-      }
-
-      function stopRecordingUI() {
-        micIcon.style.display = 'none';
-        recordingTime.style.display = 'none';
-        userInput.placeholder = 'Digite sua mensagem...';
-      }
-
-      function updateRecordingTime() {
-        recordingTimer = setInterval(() => {
-          const now = new Date();
-          const elapsed = Math.floor((now - recordingStartTime) / 1000);
-          const minutes = Math.floor(elapsed / 60);
-          const seconds = elapsed % 60;
-          recordingTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }, 1000);
       }
 
       function updateActionIcon() {
@@ -467,26 +389,12 @@
       window.onload = async () => {
         await initializeImageRecognition();
         
-        // Fluxo inicial
+        // Mensagem inicial após 5 segundos
         setTimeout(async () => {
-          await simulateTyping("Oiê, gato! Eu sou a <strong>Suellen Rocha</strong> 😘");
-          await simulateTyping("Sou de Florianópolis agora, mas nasci em Cachoeira de Itabuna, Bahia... Adoro conhecer pessoas novas! De onde você é? E quantos anos tem? Me conta tudo sobre você!");
-        }, 1000);
+          await simulateTyping("Oiê, gato! Tudo bem com você? 🥰");
+          await simulateTyping("Me conta, qual seu nome? Quero saber como chamar você... 😘");
+        }, 5000);
       };
-
-      async function analyzeImage(imageData) {
-        try {
-          if (!pipeline) {
-            await initializeImageRecognition();
-          }
-          
-          const output = await pipeline(imageData);
-          return output[0].generated_text;
-        } catch (error) {
-          console.error("Erro ao analisar imagem:", error);
-          return null;
-        }
-      }
 
       async function handleImageUpload(file) {
         const reader = new FileReader();
@@ -520,7 +428,7 @@
             await simulateTyping(randomResponse);
             
             // Perguntar se quer ver fotos
-            await simulateTyping("Quer ver umas fotos minhas bem especiais? São 5 fotos lindas só para você por R$ 10... O que acha?");
+            await simulateTyping(`${userName || 'Amor'}, quer ver umas fotos minhas bem especiais? São 5 fotos lindas só para você por R$ 10... O que acha?`);
             
             appendMessage("bot", `
               <div class="option-buttons">
@@ -540,11 +448,25 @@
         reader.readAsDataURL(file);
       }
 
+      async function analyzeImage(imageData) {
+        try {
+          if (!pipeline) {
+            await initializeImageRecognition();
+          }
+          
+          const output = await pipeline(imageData);
+          return output[0].generated_text;
+        } catch (error) {
+          console.error("Erro ao analisar imagem:", error);
+          return null;
+        }
+      }
+
       async function handlePhotoInterest(option) {
         appendMessage("user", option);
         
         // Resposta envolvente para vender as fotos
-        await simulateTyping("Ah, meu amor, para eu te mandar essas fotos que às vezes dão um trabalhinho, você precisa me passar pelo menos um pix de R$ 10, tá bom? São 5 fotos lindas só para você... rsrs");
+        await simulateTyping(`Ah, ${userName || 'meu amor'}, para eu te mandar essas fotos que às vezes dão um trabalhinho, você precisa me passar pelo menos um pix de R$ 10, tá bom? São 5 fotos lindas só para você... rsrs`);
         await simulateTyping("Depois que você fizer o pix e me mandar o comprovante, eu te mando as fotos na hora! Prometo que vale a pena... 😘");
         
         showPaymentOptions();
@@ -735,7 +657,7 @@
             <p>Pacote com ${PHOTOS_PER_PACKAGE} fotos especiais para você:</p>
             ${Array.from({length: PHOTOS_PER_PACKAGE}, (_, i) => {
               const photoNum = currentPhotoIndex + i;
-              return `<img src="foto${photoNum}.webp" class="preview-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzljMjdCMCI+PHBhdGggZD0iTTgsNUgxOEExLDcgMSAwLDEgMTksMTJWMThBMSwxIDAgMCwxIDE4LDE5SDhBNyw3IDAgMCwxIDEsMTJWNUExLDEgMCAwLDEgOCw1TTEyLDEwQTIsMiAwIDAsMCAxMCwxMkEyLDIgMCAwLDAgMTIsMTRBMiwyIDAgMCwwIDE0LDEyQTIsMiAwIDAsMCAxMiwxMFoiLz48L3N2Zz4='">`;
+              return `<img src="foto${photoNum}.webp" class="preview-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzljMjdCMCI+PHBhdGggZD0iTTgsNUgxOEExLDcgMSAwLDEgMTksMTJWMThBMSwxIDAgMCwxIDE4LDE5SDhBNyA3IDAgMCwxIDEsMTJWNUExLDEgMCAwLDEgOCw1TTEyLDEwQTIsMiAwIDAsMCAxMCwxMkEyLDIgMCAwLDAgMTIsMTRBMiwyIDAgMCwwIDE0LDEyQTIsMiAwIDAsMCAxMiwxMFoiLz48L3N2Zz4='">`;
             }).join('')}
             <p>Gostou do que viu? Quer mais ${PHOTOS_PER_PACKAGE} fotos por R$ ${PHOTO_PRICE}? 😏</p>
             <button class="flirt-button" onclick="handlePhotoInterest('Quero mais fotos')">💋 Quero mais fotos</button>
@@ -830,16 +752,33 @@
           return;
         }
         
+        // Capturar nome do usuário
+        if (!userName && (normalized.includes('meu nome é') || normalized.includes('eu sou') || normalized.includes('me chamo'))) {
+          userName = text.replace(/meu nome é/i, '').replace(/eu sou/i, '').replace(/me chamo/i, '').trim().split(' ')[0];
+          clearTimeout(typingTimeout);
+          hideTypingIndicator();
+          await simulateTyping(`Que nome lindo, ${userName}! 😍`);
+          await simulateTyping(`${userName}, me conta mais sobre você... O que você gosta de fazer?`);
+          isWaitingResponse = false;
+          return;
+        }
+        
         // Perguntas sobre Suellen
         if (normalized.includes('quem e suellen') || normalized.includes('quem é suellen') ||
             normalized.includes('quem e voce') || normalized.includes('quem é você') ||
-            normalized.includes('quem e vc') || normalized.includes('quem é vc') ||
-            (normalized.includes('de onde') && normalized.includes('suellen')) ||
-            normalized.includes('onde mora') || normalized.includes('onde vive') ||
-            normalized.includes('vc é de onde') || normalized.includes('você é de onde')) {
+            normalized.includes('quem e vc') || normalized.includes('quem é vc')) {
           clearTimeout(typingTimeout);
           hideTypingIndicator();
-          await simulateTyping("Eu sou a Suellen, uma garota que adora conversas quentes e fotos provocantes... Tenho 24 anos, sou de Florianópolis agora, mas nasci em Cachoeira de Itabuna, na Bahia. Adoro praia, música e conversas interessantes como a nossa! 😘");
+          await simulateTyping(`${userName || 'Amor'}, eu sou a Suellen, uma garota que adora conversas quentes e fotos provocantes... Tenho 24 anos e adoro praia, música e conversas interessantes como a nossa! 😘`);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Perguntas sobre origem
+        if ((normalized.includes('de onde') && normalized.includes('suellen')) {
+          clearTimeout(typingTimeout);
+          hideTypingIndicator();
+          await simulateTyping(`Eu sou de Florianópolis agora, ${userName || 'amor'}, mas nasci em Cachoeira de Itabuna, na Bahia... Adoro praia e sol! E você, de onde é? 😊`);
           isWaitingResponse = false;
           return;
         }
@@ -849,7 +788,7 @@
             normalized.includes('como você começou') || normalized.includes('como vc começou')) {
           clearTimeout(typingTimeout);
           hideTypingIndicator();
-          await simulateTyping("Ah, quer saber da minha história? Eu era uma garota tímida na Bahia, até que descobri meu lado mais ousado... rsrs");
+          await simulateTyping(`Ah, ${userName || 'amor'}, eu era uma garota tímida na Bahia, até que descobri meu lado mais ousado... rsrs`);
           await simulateTyping("Me mudei pra Floripa pra viver mais livre, conhecer gente interessante como você! Foi a melhor decisão da minha vida! 😊");
           isWaitingResponse = false;
           return;
@@ -866,6 +805,38 @@
           return;
         }
         
+        // Respostas picantes para mensagens provocativas
+        if (normalized.includes('gostosa') || normalized.includes('delícia') || normalized.includes('linda') || 
+            normalized.includes('sexy') || normalized.includes('bela') || normalized.includes('maravilhosa')) {
+          clearTimeout(typingTimeout);
+          hideTypingIndicator();
+          const responses = [
+            `Hmm, ${userName || 'gato'}, você está me deixando com vontade... Quer ver mais? 😏`,
+            `Nossa, com esses elogios você está me deixando molhadinha... Quer me ver assim? 😈`,
+            `Adoro quando você me elogia assim... Me deixa com vontade de te mostrar tudo, ${userName || 'amor'}... Quer? 🤤`,
+            `Você sabe como deixar uma garota excitada, não é? Estou ficando toda molhadinha aqui... 😏🔥`
+          ];
+          await simulateTyping(responses[Math.floor(Math.random() * responses.length)]);
+          isWaitingResponse = false;
+          return;
+        }
+        
+        // Respostas picantes para mensagens mais ousadas
+        if (normalized.includes('quero você') || normalized.includes('te comer') || normalized.includes('te foder') ||
+            normalized.includes('transar') || normalized.includes('gozar') || normalized.includes('sentar')) {
+          clearTimeout(typingTimeout);
+          hideTypingIndicator();
+          const responses = [
+            `Nossa, ${userName || 'gato'}, estou imaginando você aqui comigo... Quero te dar de todas as formas, ficar de quatro pra você... 😈🔥`,
+            `Hmm, só de imaginar você me comendo já fico toda molhadinha... Quero gozar gostoso com você! 🤤💦`,
+            `Estou louca pra sentar no seu pau, ${userName || 'amor'}... Quero sentir você bem fundo dentro de mim! 😏🔥`,
+            `Você não imagina o quanto estou com vontade de você... Quero te mamar até você gozar na minha boquinha... 😈💋`
+          ];
+          await simulateTyping(responses[Math.floor(Math.random() * responses.length)]);
+          isWaitingResponse = false;
+          return;
+        }
+        
         // Se não for nenhum dos casos acima, usa a resposta personalizada
         clearTimeout(typingTimeout);
         hideTypingIndicator();
@@ -875,16 +846,16 @@
 
       async function generateFlirtyResponse(text) {
         const responses = [
-          "Hmm, gosto do que está dizendo... Me conta mais sobre você! 😉",
-          "Você tem um jeito tão interessante de falar... Me deixa curiosa para saber mais! 😘",
-          "Adoro essa energia que você está trazendo... Me diz, o que mais você gosta? 😊",
-          "Nossa, com essa conversa você está me deixando com vontade de te conhecer melhor... 😏",
-          "Você tem um jeito tão cativante... Me conta, o que te faz sentir mais vivo? 😈",
-          "Adoro quando a conversa fica assim... Quer me contar um segredo? 😉",
-          "Hmm, com esse papo você está me deixando com vontade de te mostrar umas coisinhas... Quer ver? 😘",
-          "Você sabe como manter uma garota interessada, não é? Me diz, o que mais você quer saber? 😊",
-          "Adoro essa conexão que estamos criando... Quer levar isso para um nível mais íntimo? 😏",
-          "Com esse papo, você está me deixando com vontade de te presentear com umas fotos especiais... Quer? 😈"
+          `Hmm, ${userName || 'gato'}, gosto do que está dizendo... Me conta mais sobre você! 😉`,
+          `Você tem um jeito tão interessante de falar, ${userName || 'amor'}... Me deixa curiosa para saber mais! 😘`,
+          `Adoro essa energia que você está trazendo... Me diz, o que mais você gosta? 😊`,
+          `Nossa, ${userName || 'gato'}, com essa conversa você está me deixando com vontade de te conhecer melhor... 😏`,
+          `Você tem um jeito tão cativante... Me conta, o que te faz sentir mais vivo? 😈`,
+          `Adoro quando a conversa fica assim... Quer me contar um segredo? 😉`,
+          `Hmm, ${userName || 'amor'}, com esse papo você está me deixando com vontade de te mostrar umas coisinhas... Quer ver? 😘`,
+          `Você sabe como manter uma garota interessada, não é? Me diz, o que mais você quer saber? 😊`,
+          `Adoro essa conexão que estamos criando... Quer levar isso para um nível mais íntimo? 😏`,
+          `Com esse papo, ${userName || 'gato'}, você está me deixando com vontade de te presentear com umas fotos especiais... Quer? 😈`
         ];
         
         const randomResponse = responses[Math.floor(Math.random() * responses.length)];
@@ -892,7 +863,7 @@
         
         // Oferecer fotos após algumas mensagens
         if (Math.random() > 0.7) {
-          await simulateTyping("Quer ver umas fotos minhas bem especiais? São 5 fotos lindas só para você por R$ 10... O que acha?");
+          await simulateTyping(`${userName || 'Amor'}, quer ver umas fotos minhas bem especiais? São 5 fotos lindas só para você por R$ 10... O que acha?`);
           
           appendMessage("bot", `
             <div class="option-buttons">
@@ -906,7 +877,7 @@
         appendMessage("user", option);
         
         if (option === 'Continuar conversando') {
-          simulateTyping("Adoro continuar conversando com você... Me conta, o que você gosta de fazer nos seus momentos livres? 😊");
+          simulateTyping(`Adoro continuar conversando com você, ${userName || 'amor'}... Me conta, o que você gosta de fazer nos seus momentos livres? 😊`);
         }
       }
 
