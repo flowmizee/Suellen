@@ -419,7 +419,8 @@
             
             // Ajusta o padding inferior para que as mensagens não fiquem por baixo da área de input/upload
             chatMessages.style.paddingBottom = `${bottomPadding}px`;
-            // O padding-top do CSS já é suficiente para o espaçamento inicial.
+            // Ajusta o padding superior para que as mensagens não fiquem por baixo do cabeçalho
+            chatMessages.style.paddingTop = `${headerHeight + 10}px`; // Adiciona um pouco de margem extra
             chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o final após o ajuste
         }
 
@@ -892,7 +893,9 @@
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', adjustChatMessagesPadding);
             }
-            adjustChatMessagesPadding(); // Ajusta o padding inicial
+            // Chama adjustChatMessagesPadding inicialmente para definir o padding correto
+            // antes mesmo da primeira mensagem para garantir o posicionamento desde o início.
+            adjustChatMessagesPadding();
 
             setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
                 addTypingIndicator(); // Mostra o indicador de digitação
@@ -900,7 +903,7 @@
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                    chatMessages.scrollTop = 0; // Garante que a primeira mensagem fique no topo
+                    // Não é necessário forçar scrollTop = 0 aqui, o padding inicial e flexbox já organizam.
                 }, Math.random() * 4000 + 3000); 
             }, 4000); 
         };
