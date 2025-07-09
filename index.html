@@ -24,44 +24,45 @@
         }
 
         /* Estilos globais para o corpo da página */
-        body {
-            font-family: 'Inter', sans-serif;
+        html, body {
+            height: 100%; /* Garante que HTML e Body ocupem a altura total da viewport */
             margin: 0;
             padding: 0;
+            overflow: hidden; /* Evita que o body tenha scroll próprio */
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Garante que o corpo ocupe a altura total da viewport */
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            overflow: hidden; /* Evita scroll indesejado do body */
         }
 
-        /* Contêiner principal do chat */
+        /* Contêiner principal do chat - agora fixo e centralizado na viewport */
         .chat-container {
             width: 100%;
             max-width: 450px; /* Largura máxima para simular um celular */
-            height: 95vh; /* Quase a altura total da tela, para dispositivos maiores */
-            display: flex;
-            flex-direction: column;
+            height: 100%; /* Ocupa a altura total do body/viewport */
+            position: fixed; /* Fixa na viewport */
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%); /* Centraliza horizontalmente */
             background-color: var(--bg-medium);
-            border-radius: 25px;
+            border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            position: relative; /* Mantido relative para o header */
+            display: flex;
+            flex-direction: column; /* Organiza os filhos em coluna */
+            overflow: hidden; /* Importante para que o conteúdo não vaze das bordas arredondadas */
         }
 
-        /* Cabeçalho do chat */
+        /* Cabeçalho do chat - parte do fluxo flexbox do contêiner */
         .chat-header {
             display: flex;
             align-items: center;
             padding: 15px 20px;
             background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
-            border-top-left-radius: 25px;
-            border-top-right-radius: 25px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            position: relative;
-            z-index: 10;
+            z-index: 10; /* Garante que fique acima de outros elementos */
+            /* As bordas arredondadas são do container pai, não do header */
         }
 
         /* Imagem de perfil no cabeçalho */
@@ -88,16 +89,16 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        /* Área de exibição das mensagens */
+        /* Área de exibição das mensagens - ocupa o espaço restante e é scrollable */
         .chat-messages {
             flex-grow: 1; /* Permite que ocupe o espaço restante */
-            padding: 20px;
+            padding: 20px; /* Padding padrão para todos os lados */
             overflow-y: auto; /* Adiciona scroll se as mensagens excederem a altura */
             display: flex;
             flex-direction: column;
             gap: 10px;
             scroll-behavior: smooth; /* Rolagem suave */
-            /* Padding inferior será ajustado via JS para acomodar input e upload area */
+            /* padding-bottom será ajustado via JS */
         }
 
         /* Bolhas de mensagem */
@@ -170,18 +171,14 @@
             40% { transform: scale(1); }
         }
 
-        /* Área de input do chat (agora fixed) */
+        /* Área de input do chat - parte do fluxo flexbox do contêiner */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: fixed; /* Fixa na viewport */
-            bottom: 0; /* Fixa na parte inferior da viewport */
-            left: 0;
-            right: 0;
-            width: 100%; /* Ocupa a largura total */
-            z-index: 10;
+            z-index: 10; /* Garante que fique acima de outros elementos */
+            /* As bordas arredondadas são do container pai, não do input area */
         }
 
         /* Campo de input de texto */
@@ -222,7 +219,7 @@
             background-color: var(--accent-red);
         }
 
-        /* Estilos para a nova área de upload de PIX (agora fixed) */
+        /* Estilos para a nova área de upload de PIX - posicionada absolutamente */
         .pix-upload-area {
             display: none; /* Escondido por padrão */
             flex-direction: column;
@@ -230,7 +227,7 @@
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: fixed; /* Fixa na viewport */
+            position: absolute; /* Posicionada absolutamente dentro do chat-container */
             left: 0;
             right: 0;
             width: 100%;
@@ -314,11 +311,8 @@
         /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
-                height: 100vh; /* Ocupa a altura total da tela em celulares */
                 border-radius: 0; /* Remove bordas arredondadas em tela cheia */
-            }
-            .chat-header {
-                border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
+                box-shadow: none; /* Remove sombra em tela cheia */
             }
             /* O padding-bottom das mensagens e a posição das áreas de input/upload
                serão ajustados dinamicamente via JS para lidar com o teclado virtual. */
@@ -327,7 +321,7 @@
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">
+        <div class="chat-header" id="chat-header"> <!-- Adicionado ID para referência JS -->
             <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
@@ -373,6 +367,7 @@
         const sendButton = document.getElementById('send-button');
         const statusText = document.getElementById('status-text');
         const chatInputArea = document.getElementById('chat-input-area'); // Referência à área de input
+        const chatHeader = document.getElementById('chat-header'); // Referência ao cabeçalho
 
         // Novas variáveis para a área de upload de PIX
         const pixUploadArea = document.getElementById('pix-upload-area');
@@ -402,20 +397,24 @@
         // Função para ajustar o padding inferior das mensagens e a posição da área de upload
         function adjustChatMessagesPadding() {
             const inputAreaHeight = chatInputArea.offsetHeight;
+            const headerHeight = chatHeader.offsetHeight;
             const pixUploadAreaHeight = pixUploadArea.offsetHeight;
             
-            let requiredPadding = inputAreaHeight + 20; // Padding padrão para a área de input
+            let bottomPadding = inputAreaHeight + 20; // Padding padrão para a área de input
 
             if (pixUploadArea.style.display === 'flex') {
-                requiredPadding += pixUploadAreaHeight; // Adiciona a altura da área de upload se visível
-                // Posiciona pixUploadArea logo acima de chatInputArea, fixado na viewport
+                bottomPadding += pixUploadAreaHeight; // Adiciona a altura da área de upload se visível
+                // Posiciona pixUploadArea logo acima de chatInputArea
                 pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
                 // Quando oculto, garante que não interfira no layout
                 pixUploadArea.style.bottom = `0px`;
             }
             
-            chatMessages.style.paddingBottom = `${requiredPadding}px`;
+            // Ajusta o padding inferior para que as mensagens não fiquem por baixo da área de input/upload
+            chatMessages.style.paddingBottom = `${bottomPadding}px`;
+            // Ajusta o padding superior para que as mensagens não fiquem por baixo do cabeçalho
+            chatMessages.style.paddingTop = `${headerHeight + 10}px`; // Adiciona um pouco de margem extra
             chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o final após o ajuste
         }
 
