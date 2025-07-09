@@ -37,15 +37,12 @@
             align-items: center;
         }
 
-        /* Contêiner principal do chat - agora fixo e centralizado na viewport */
+        /* Contêiner principal do chat - agora ocupa 100% da altura da viewport e é um flex container */
         .chat-container {
             width: 100%;
             max-width: 450px; /* Largura máxima para simular um celular */
-            height: 100%; /* Ocupa a altura total do body/viewport */
-            position: fixed; /* Fixa na viewport */
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%); /* Centraliza horizontalmente */
+            height: 100vh; /* Ocupa a altura total da viewport */
+            position: relative; /* Necessário para posicionamento absoluto da pix-upload-area */
             background-color: var(--bg-medium);
             border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -54,7 +51,7 @@
             overflow: hidden; /* Importante para que o conteúdo não vaze das bordas arredondadas */
         }
 
-        /* Cabeçalho do chat - parte do fluxo flexbox do contêiner */
+        /* Cabeçalho do chat - não encolhe */
         .chat-header {
             display: flex;
             align-items: center;
@@ -62,7 +59,7 @@
             background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             z-index: 10; /* Garante que fique acima de outros elementos */
-            /* As bordas arredondadas são do container pai, não do header */
+            flex-shrink: 0; /* Impede que o cabeçalho encolha */
         }
 
         /* Imagem de perfil no cabeçalho */
@@ -171,14 +168,14 @@
             40% { transform: scale(1); }
         }
 
-        /* Área de input do chat - parte do fluxo flexbox do contêiner */
+        /* Área de input do chat - não encolhe */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 10; /* Garante que fique acima de outros elementos */
-            /* As bordas arredondadas são do container pai, não do input area */
+            flex-shrink: 0; /* Impede que a área de input encolha */
         }
 
         /* Campo de input de texto */
@@ -837,12 +834,12 @@
 
         // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
-            adjustChatMessagesPadding(); // Ajusta o padding inicial
             // Adiciona um listener para o evento resize do visualViewport para ajustar o layout
             // quando o teclado virtual aparece/desaparece em dispositivos móveis.
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', adjustChatMessagesPadding);
             }
+            adjustChatMessagesPadding(); // Ajusta o padding inicial
 
             setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
                 addTypingIndicator(); // Mostra o indicador de digitação
