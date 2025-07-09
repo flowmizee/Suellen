@@ -26,6 +26,7 @@
         /* Estilos globais para o corpo da página */
         html, body {
             height: 100%; /* Garante que HTML e Body ocupem a altura total da viewport */
+            width: 100%; /* Garante que ocupe a largura total */
             margin: 0;
             padding: 0;
             overflow: hidden; /* Evita que o body tenha scroll próprio */
@@ -37,12 +38,15 @@
             align-items: center;
         }
 
-        /* Contêiner principal do chat - agora ocupa 100% da altura da viewport e é um flex container */
+        /* Contêiner principal do chat - agora usa position: fixed e altura dinâmica via JS */
         .chat-container {
             width: 100%;
             max-width: 450px; /* Largura máxima para simular um celular */
-            height: 100vh; /* Ocupa a altura total da viewport */
-            position: relative; /* Necessário para posicionamento absoluto da pix-upload-area */
+            position: fixed; /* Fixa o container na viewport */
+            top: 0;
+            left: 50%; /* Centraliza horizontalmente */
+            transform: translateX(-50%); /* Ajuste para centralização perfeita */
+            bottom: 0; /* Ocupa até a parte inferior da viewport */
             background-color: var(--bg-medium);
             border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -89,6 +93,7 @@
         /* Área de exibição das mensagens - ocupa o espaço restante e é scrollable */
         .chat-messages {
             flex-grow: 1; /* Permite que ocupe o espaço restante */
+            min-height: 0; /* Importante para que o flex-grow funcione corretamente com overflow */
             padding: 20px; /* Padding padrão para todos os lados */
             overflow-y: auto; /* Adiciona scroll se as mensagens excederem a altura */
             display: flex;
@@ -314,14 +319,12 @@
         /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
-                height: 100vh; /* Ocupa a altura total da tela em celulares */
                 border-radius: 0; /* Remove bordas arredondadas em tela cheia */
+                max-width: 100%; /* Garante que ocupe a largura total */
             }
             .chat-header {
                 border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
             }
-            /* O padding-bottom das mensagens e a posição das áreas de input/upload
-               serão ajustados dinamicamente via JS para lidar com o teclado virtual. */
         }
     </style>
 </head>
@@ -373,6 +376,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
         // Variáveis globais para os elementos do chat
+        const chatContainer = document.querySelector('.chat-container');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
@@ -406,14 +410,27 @@
         let tesseractWorker = null;
 
         /**
+         * @function setChatContainerHeight
+         * @description Define a altura do chat-container para a altura interna da janela.
+         * Isso é crucial para lidar com a altura da viewport em dispositivos móveis,
+         * especialmente quando o teclado virtual é exibido/ocultado.
+         */
+        function setChatContainerHeight() {
+            chatContainer.style.height = `${window.innerHeight}px`;
+            adjustChatMessagesPadding(); // Reajusta o padding após a altura do container ser definida
+        }
+
+        /**
          * @function adjustChatMessagesPadding
          * @description Ajusta o padding inferior da área de mensagens e a posição da área de upload PIX
          * para garantir que o cabeçalho, a área de input e a área de upload (quando visível)
          * estejam sempre visíveis e o conteúdo das mensagens não seja ocultado por eles.
-         * Também lida com o redimensionamento do teclado virtual em dispositivos móveis.
          */
         function adjustChatMessagesPadding() {
-            const inputAreaHeight = chatInputArea.offsetHeight; // Altura da área de input de texto
+            // A altura do cabeçalho e da área de input são fixas (flex-shrink: 0)
+            const headerHeight = chatHeader.offsetHeight;
+            const inputAreaHeight = chatInputArea.offsetHeight;
+
             let currentBottomPadding = inputAreaHeight; // Começa com a altura da área de input
 
             // Se a área de upload PIX estiver visível, adiciona sua altura ao padding inferior
@@ -941,13 +958,16 @@
 
         // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
-            // Adiciona um listener para o evento resize do visualViewport para ajustar o layout
-            // quando o teclado virtual aparece/desaparece em dispositivos móveis.
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', adjustChatMessagesPadding);
-            }
-            adjustChatMessagesPadding(); // Ajusta o padding inicial
+            // Define a altura inicial do chat-container
+            setChatContainerHeight();
 
+            // Adiciona listeners para o evento resize do window e visualViewport
+            // para ajustar o layout quando o teclado virtual aparece/desaparece ou a orientação muda.
+            window.addEventListener('resize', setChatContainerHeight);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', setChatContainerHeight);
+            }
+            
             setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
                 addTypingIndicator(); // Mostra o indicador de digitação
                 setTimeout(() => { // Atraso de 3 a 7 segundos para enviar a mensagem
