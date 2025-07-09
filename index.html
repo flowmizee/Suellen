@@ -48,7 +48,7 @@
             border-radius: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
-            position: relative; /* Necessário para posicionar o input-area e upload-area */
+            position: relative; /* Mantido relative para o header */
         }
 
         /* Cabeçalho do chat */
@@ -170,14 +170,16 @@
             40% { transform: scale(1); }
         }
 
-        /* Área de input do chat */
+        /* Área de input do chat (agora fixed) */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: absolute; /* Posição absoluta para fixar no rodapé */
-            bottom: 0; /* Fixa na parte inferior */
+            position: fixed; /* Fixa na viewport */
+            bottom: 0; /* Fixa na parte inferior da viewport */
+            left: 0;
+            right: 0;
             width: 100%; /* Ocupa a largura total */
             z-index: 10;
         }
@@ -220,7 +222,7 @@
             background-color: var(--accent-red);
         }
 
-        /* Estilos para a nova área de upload de PIX */
+        /* Estilos para a nova área de upload de PIX (agora fixed) */
         .pix-upload-area {
             display: none; /* Escondido por padrão */
             flex-direction: column;
@@ -228,11 +230,13 @@
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: absolute;
-            /* bottom será ajustado via JS */
+            position: fixed; /* Fixa na viewport */
+            left: 0;
+            right: 0;
             width: 100%;
             z-index: 9; /* Abaixo do chat-input-area */
             gap: 10px;
+            /* bottom será ajustado via JS */
         }
 
         .pix-preview-container {
@@ -316,13 +320,8 @@
             .chat-header {
                 border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
             }
-            /* Ajusta o padding inferior das mensagens para acomodar o teclado virtual e a área de upload */
-            .chat-messages {
-                /* O padding-bottom será ajustado dinamicamente via JS */
-            }
-            .pix-upload-area {
-                /* bottom será ajustado via JS */
-            }
+            /* O padding-bottom das mensagens e a posição das áreas de input/upload
+               serão ajustados dinamicamente via JS para lidar com o teclado virtual. */
         }
     </style>
 </head>
@@ -409,9 +408,11 @@
 
             if (pixUploadArea.style.display === 'flex') {
                 requiredPadding += pixUploadAreaHeight; // Adiciona a altura da área de upload se visível
-                pixUploadArea.style.bottom = `${inputAreaHeight}px`; // Posiciona a área de upload acima do input
+                // Posiciona pixUploadArea logo acima de chatInputArea, fixado na viewport
+                pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
-                pixUploadArea.style.bottom = `0px`; // Garante que esteja fora da tela quando oculto
+                // Quando oculto, garante que não interfira no layout
+                pixUploadArea.style.bottom = `0px`;
             }
             
             chatMessages.style.paddingBottom = `${requiredPadding}px`;
@@ -665,10 +666,17 @@
                             addMessage(errorMessage, 'suellen');
                             chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
                         }
+                    } else {
+                        // Se a IA não identificou uma quantidade específica, mas o usuário perguntou sobre fotos
+                        // Ex: "Quero ver suas fotos", "Me mostra as fotos", "Quanto custa?"
+                        if (message.toLowerCase().includes('foto') || message.toLowerCase().includes('fotos') || message.toLowerCase().includes('pack') || message.toLowerCase().includes('quanto custa') || message.toLowerCase().includes('preço')) {
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
+                            removeTypingIndicator();
+                            addMessage("Quantas fotos você gostaria, meu bem? 😉", 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: "Quantas fotos você gostaria, meu bem? 😉" }] });
+                        }
                     }
-                    // Não há um 'else' aqui para quando quantityMatch é null.
-                    // Isso significa que se a IA não identificar uma quantidade específica,
-                    // ela continuará a conversa de acordo com o prompt da persona.
 
                 } else {
                     removeTypingIndicator();
@@ -831,6 +839,12 @@
         // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
             adjustChatMessagesPadding(); // Ajusta o padding inicial
+            // Adiciona um listener para o evento resize do visualViewport para ajustar o layout
+            // quando o teclado virtual aparece/desaparece em dispositivos móveis.
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', adjustChatMessagesPadding);
+            }
+
             setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
                 addTypingIndicator(); // Mostra o indicador de digitação
                 setTimeout(() => { // Atraso de 3 a 7 segundos para enviar a mensagem
