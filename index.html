@@ -6,6 +6,7 @@
     <title>Suellen Rocha - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Define as variáveis de cores e fontes para fácil manutenção */
         :root {
             --bg-dark: #28004D; /* Um roxo bem escuro */
             --bg-medium: #4A0080; /* Um roxo médio para o chat */
@@ -17,6 +18,12 @@
             --bubble-suellen: #FFFFFF; /* Cor da bolha da Suellen */
         }
 
+        /* Aplica box-sizing para um modelo de caixa mais previsível */
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Estilos globais para o corpo da página */
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
@@ -24,16 +31,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: 100vh; /* Garante que o corpo ocupe a altura total da viewport */
             background-color: var(--bg-dark);
             color: var(--text-light);
             overflow: hidden; /* Evita scroll indesejado do body */
         }
 
+        /* Contêiner principal do chat */
         .chat-container {
             width: 100%;
-            max-width: 450px; /* Tamanho de um celular */
-            height: 95vh; /* Quase a altura total da tela */
+            max-width: 450px; /* Largura máxima para simular um celular */
+            height: 95vh; /* Quase a altura total da tela, para dispositivos maiores */
             display: flex;
             flex-direction: column;
             background-color: var(--bg-medium);
@@ -43,6 +51,7 @@
             position: relative;
         }
 
+        /* Cabeçalho do chat */
         .chat-header {
             display: flex;
             align-items: center;
@@ -55,6 +64,7 @@
             z-index: 10;
         }
 
+        /* Imagem de perfil no cabeçalho */
         .profile-pic {
             width: 50px;
             height: 50px;
@@ -64,6 +74,7 @@
             margin-right: 15px;
         }
 
+        /* Informações do cabeçalho (nome e status) */
         .header-info h2 {
             margin: 0;
             font-size: 1.2em;
@@ -77,16 +88,19 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Área de exibição das mensagens */
         .chat-messages {
-            flex-grow: 1;
+            flex-grow: 1; /* Permite que ocupe o espaço restante */
             padding: 20px;
-            overflow-y: auto;
+            overflow-y: auto; /* Adiciona scroll se as mensagens excederem a altura */
             display: flex;
             flex-direction: column;
             gap: 10px;
-            scroll-behavior: smooth;
+            scroll-behavior: smooth; /* Rolagem suave */
+            padding-bottom: 80px; /* Espaço para o campo de input fixo */
         }
 
+        /* Bolhas de mensagem */
         .message-bubble {
             max-width: 80%;
             padding: 12px 18px;
@@ -100,15 +114,15 @@
         .message-bubble.user {
             background-color: var(--bubble-user);
             color: var(--text-light);
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
+            align-self: flex-end; /* Alinha a direita para mensagens do usuário */
+            border-bottom-right-radius: 5px; /* Detalhe no canto da bolha */
         }
 
         .message-bubble.suellen {
             background-color: var(--bubble-suellen);
             color: var(--text-dark);
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
+            align-self: flex-start; /* Alinha a esquerda para mensagens da Suellen */
+            border-bottom-left-radius: 5px; /* Detalhe no canto da bolha */
         }
 
         .message-bubble img {
@@ -117,17 +131,17 @@
             margin-top: 5px;
         }
 
-        /* Styling for the typing indicator bubble */
+        /* Estilo para o indicador de digitação (bolha com 3 pontos) */
         .message-bubble.typing-indicator-bubble {
             background-color: var(--bubble-suellen);
             color: var(--text-dark);
             align-self: flex-start;
             border-bottom-left-radius: 5px;
-            padding: 10px 15px; /* Slightly smaller padding for indicator */
+            padding: 10px 15px; /* Padding ligeiramente menor */
             display: flex;
             align-items: center;
-            width: fit-content; /* Adjust width to content */
-            opacity: 1; /* Always visible when added */
+            width: fit-content; /* Ajusta a largura ao conteúdo */
+            opacity: 1; /* Sempre visível quando adicionado */
         }
 
         .typing-dots {
@@ -139,32 +153,38 @@
             display: inline-block;
             width: 8px;
             height: 8px;
-            background-color: rgba(0, 0, 0, 0.5); /* Darker dots for light bubble */
+            background-color: rgba(0, 0, 0, 0.5); /* Pontos mais escuros para bolha clara */
             border-radius: 50%;
             margin: 0 2px;
-            animation: bounce 1.4s infinite ease-in-out both;
+            animation: bounce 1.4s infinite ease-in-out both; /* Animação de "bounce" */
         }
 
+        /* Atrasos para a animação dos pontos */
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
         .typing-dots span:nth-child(3) { animation-delay: 0s; }
 
+        /* Keyframes para a animação de "bounce" */
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
 
+        /* Área de input do chat */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
+            position: absolute; /* Posição absoluta para fixar no rodapé */
+            bottom: 0; /* Fixa na parte inferior */
+            width: 100%; /* Ocupa a largura total */
             z-index: 10;
         }
 
+        /* Campo de input de texto */
         .chat-input {
-            flex-grow: 1;
+            flex-grow: 1; /* Ocupa o máximo de espaço possível */
             padding: 12px 18px;
             border: none;
             border-radius: 25px;
@@ -179,6 +199,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
+        /* Botão de envio */
         .send-button {
             background-color: var(--accent-pink);
             color: var(--text-light);
@@ -199,14 +220,18 @@
             background-color: var(--accent-red);
         }
 
-        /* Responsividade */
+        /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
-                height: 100vh;
-                border-radius: 0;
+                height: 100vh; /* Ocupa a altura total da tela em celulares */
+                border-radius: 0; /* Remove bordas arredondadas em tela cheia */
             }
             .chat-header {
-                border-radius: 0;
+                border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
+            }
+            /* Ajusta o padding inferior das mensagens para acomodar o teclado virtual */
+            .chat-messages {
+                padding-bottom: 90px; /* Aumenta o padding para garantir visibilidade */
             }
         }
     </style>
@@ -214,7 +239,7 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Caminho para a imagem de perfil da Suellen. Certifique-se de que 'perfil.webp' esteja no mesmo diretório ou forneça o caminho correto. -->
+            <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
@@ -229,31 +254,33 @@
         <div class="chat-input-area">
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
             <button id="send-button" class="send-button">
+                <!-- Ícone de envio (seta) em SVG -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal"><path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/></svg>
             </button>
         </div>
     </div>
 
     <script>
-        // Global variables for the chat
+        // Variáveis globais para os elementos do chat
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
         const statusText = document.getElementById('status-text');
 
-        // Chat history for the Gemini API
+        // Histórico do chat para a API Gemini
         let chatHistory = [];
-        // API key provided by the user. Leaving it empty as per instructions for Canvas environment.
-        const API_KEY = ""; 
+        // CHAVE DA API: IMPORTANTE! Insira sua chave da API do Gemini aqui.
+        // A chave fornecida anteriormente pelo usuário foi AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss
+        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-        // Game/sale state variables
+        // Variáveis de estado do jogo/venda
         let photosSentCount = 0;
         let expectedPaymentAmount = 0;
         let waitingForComprovante = false;
-        let typingIndicatorElement = null; // To control the typing bubble
+        let typingIndicatorElement = null; // Para controlar a bolha de digitação
 
-        // Function to add message to chat
+        // Função para adicionar mensagem ao chat
         function addMessage(text, sender, isImage = false, imageUrl = '') {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', sender);
@@ -264,17 +291,17 @@
                 img.alt = `Foto de Suellen ${photosSentCount}`;
                 messageBubble.appendChild(img);
             } else {
-                // Replace markdown bold with HTML bold for display
+                // Substitui markdown bold (**) por HTML bold (<strong>) para exibição
                 messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             }
 
             chatMessages.appendChild(messageBubble);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scrolls to the latest message
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
         }
 
-        // Function to add the typing indicator (bubble with 3 dots)
+        // Função para adicionar o indicador de digitação (bolha com 3 pontos)
         function addTypingIndicator() {
-            if (typingIndicatorElement) return; // Prevents adding multiple indicators
+            if (typingIndicatorElement) return; // Evita adicionar múltiplos indicadores
 
             typingIndicatorElement = document.createElement('div');
             typingIndicatorElement.classList.add('message-bubble', 'suellen', 'typing-indicator-bubble');
@@ -286,39 +313,40 @@
                 </div>
             `;
             chatMessages.appendChild(typingIndicatorElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scrolls to the indicator
-            statusText.textContent = 'digitando...'; // Updates header status
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o indicador
+            statusText.textContent = 'digitando...'; // Atualiza o status do cabeçalho
         }
 
-        // Function to remove the typing indicator
+        // Função para remover o indicador de digitação
         function removeTypingIndicator() {
             if (typingIndicatorElement) {
                 typingIndicatorElement.remove();
                 typingIndicatorElement = null;
             }
-            statusText.textContent = 'online'; // Resets header status
+            statusText.textContent = 'online'; // Reseta o status do cabeçalho
         }
 
-        // Function to process user message and generate Suellen's response
+        // Função para processar a mensagem do usuário e gerar a resposta da Suellen
         async function processUserMessage(message) {
             addMessage(message, 'user');
-            // Add the user's message to the history
+            // Adiciona a mensagem do usuário ao histórico
             chatHistory.push({ role: "user", parts: [{ text: message }] });
 
-            // Logic to simulate the receipt - this should be a more immediate response
+            // Lógica para simular o comprovante - esta deve ser uma resposta mais imediata
             if (waitingForComprovante && message.toLowerCase().startsWith('comprovante')) {
                 handleComprovante(message);
-                waitingForComprovante = false; // Reset state
-                return; // Exit function to avoid calling Gemini API again for the receipt
+                waitingForComprovante = false; // Reseta o estado
+                return; // Sai da função para não chamar a API Gemini novamente para o comprovante
             }
 
-            // Simulate initial delay before Suellen "starts typing"
+            // Simula o atraso inicial antes de Suellen "começar a digitar"
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Add typing indicator after initial delay
+            // Adiciona o indicador de digitação após o atraso inicial
             addTypingIndicator();
 
-            // **ENHANCED AND REINFORCED PERSONA PROMPT**
+            // **PROMPT DA PERSONA APRIMORADO E REFORÇADO**
+            // Este prompt é crucial para manter a persona da Suellen.
             const personaPrompt = `
             Você é Suellen Rocha. Sua identidade é:
             - Mulher jovem, sensual, misteriosa e envolvente.
@@ -335,14 +363,15 @@
             Fale "safadezas" apenas quando a conversa estiver quente e o usuário demonstrar interesse explícito.
             `;
 
-            // Construct the payload to always include the persona prompt at the beginning
+            // Constrói o payload para sempre incluir o prompt da persona no início
+            // Isso garante que o modelo sempre tenha as instruções de persona em cada turno.
             const payload = {
                 contents: [
                     {
                         role: "user",
-                        parts: [{ text: personaPrompt }] // Persona prompt as the first "user" turn
+                        parts: [{ text: personaPrompt }] // Prompt da persona como o primeiro turno "user"
                     },
-                    ...chatHistory // Then append the actual chat history
+                    ...chatHistory // Em seguida, anexa o histórico de chat real
                 ]
             };
 
@@ -359,19 +388,19 @@
                     result.candidates[0].content.parts.length > 0) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
-                    // Simulate additional delay before sending the message (2 to 5 seconds)
+                    // Simula um atraso adicional antes de enviar a mensagem (2 a 5 segundos)
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
 
                     removeTypingIndicator();
                     addMessage(suellenResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
 
-                    // Logic to identify purchase intent and provide Pix data
+                    // Lógica para identificar a intenção de compra e fornecer dados Pix
                     const quantityMatch = suellenResponse.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
                     let requestedQuantity = 0;
 
                     if (quantityMatch) {
-                        const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase(); // Get capture group or entire string
+                        const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase(); // Pega o grupo de captura ou a string inteira
                         switch (numText) {
                             case 'cinco': requestedQuantity = 5; break;
                             case 'dez': requestedQuantity = 10; break;
@@ -400,7 +429,7 @@
                             expectedPaymentAmount = (requestedQuantity / 5) * 10;
                             const pixMessage = `Ah, que delícia! ${requestedQuantity} fotos, né? Isso vai ficar em R$ ${expectedPaymentAmount.toFixed(2).replace('.', ',')}, meu bem. 😉\n\nFaz o Pix pra essa chave, tá? \n\n**Chave Pix:** 98981420070\n\nDepois que fizer, me manda o comprovante (pode ser print ou PDF) e confere se o nome do recebedor aparece como Antonio, Renimar, Pinheiro ou Almeida. Assim que confirmar, suas fotos chegam na hora! Mal posso esperar pra te ver com elas...😈`;
                             
-                            addTypingIndicator(); // Show typing for Pix info
+                            addTypingIndicator(); // Mostra o digitando para a informação do Pix
                             await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
                             removeTypingIndicator();
                             addMessage(pixMessage, 'suellen');
@@ -408,7 +437,7 @@
                             waitingForComprovante = true;
                         } else {
                             const errorMessage = `Hmm, amor... pra eu te mandar as fotos, preciso que seja em múltiplos de 5, tá? E no mínimo 5 fotos. Qual quantidade você gostaria? 😉`;
-                            addTypingIndicator(); // Show typing for error message
+                            addTypingIndicator(); // Mostra o digitando para a mensagem de erro
                             await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
                             removeTypingIndicator();
                             addMessage(errorMessage, 'suellen');
@@ -429,7 +458,7 @@
             }
         }
 
-        // Function to handle the simulated receipt
+        // Função para lidar com o comprovante simulado
         function handleComprovante(message) {
             const parts = message.toLowerCase().split(' ');
             if (parts.length < 3) {
@@ -450,11 +479,11 @@
             }
         }
 
-        // Function to send photos
+        // Função para enviar as fotos
         function sendPhotos(amountPaid) {
-            const numPhotos = (amountPaid / 10) * 5; // Calculates the number of photos based on the amount paid
+            const numPhotos = (amountPaid / 10) * 5; // Calcula a quantidade de fotos com base no valor pago
             
-            // Ensures we don't send more than 100 photos in total
+            // Garante que não enviamos mais de 100 fotos no total
             const photosToSendThisBatch = Math.min(numPhotos, 100 - photosSentCount);
 
             if (photosToSendThisBatch > 0) {
@@ -467,7 +496,7 @@
                     addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
                 }
             } else {
-                // If there are no photos to send, or already sent 100
+                // Se não há fotos para enviar, ou já enviou 100
                 if (photosSentCount >= 100) {
                      addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
                 } else {
@@ -477,7 +506,7 @@
         }
 
 
-        // Event Listeners
+        // Event Listeners para enviar mensagem ao clicar no botão ou pressionar Enter
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
             if (message) {
@@ -492,14 +521,14 @@
             }
         });
 
-        // Initial greeting from Suellen
+        // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
-            addTypingIndicator(); // Show typing indicator for the initial message
+            addTypingIndicator(); // Mostra o indicador de digitação para a mensagem inicial
             setTimeout(() => {
                 removeTypingIndicator();
-                addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-            }, 4000); // 4 seconds for the first message
+                addMessage("Olá, meu bem! Que bom te ver por aqui 🙈", 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui 🙈" }] });
+            }, 4000); // 4 segundos para a primeira mensagem
         };
     </script>
 </body>
