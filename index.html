@@ -749,6 +749,11 @@
                 uploadPhotoButton.disabled = false;
                 uploadPdfButton.disabled = false;
                 receiptFileInput.value = '';
+                
+                // Fecha a área de upload independente do resultado
+                pixUploadArea.style.display = 'none';
+                chatInputArea.style.display = 'flex';
+                adjustChatMessagesPadding();
             }
         });
 
@@ -767,39 +772,38 @@
         function handleComprovante(extractedText) {
             const normalizedText = extractedText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+            // Verifica se contém qualquer um dos nomes ou o nome completo
+            const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+            const fullName = 'antonio renimar pinheiro almeida';
+            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword)) || 
+                              normalizedText.includes(fullName);
+
+            // Verifica o valor
             const amountMatch = normalizedText.match(/(?:r\$\s*|rs\s*)?(\d+(?:[.,]\d{2})?)/);
             let extractedAmount = 0;
             if (amountMatch && amountMatch[1]) {
                 extractedAmount = parseFloat(amountMatch[1].replace(',', '.'));
             }
 
-            const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword));
-
             console.log(`Valor extraído: ${extractedAmount}, Esperado: ${expectedPaymentAmount}`);
-            console.log(`Nome encontrado: ${nameMatches}, Keywords: ${nameKeywords.join(', ')}`);
+            console.log(`Nome encontrado: ${nameMatches}`);
 
             if (extractedAmount === expectedPaymentAmount && nameMatches) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
-                sendPhotos(expectedPaymentAmount);
+                
+                // Envia as fotos com pausas naturais
+                sendPhotosWithDelay(expectedPaymentAmount);
+                
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
-                pixUploadArea.style.display = 'none';
-                chatInputArea.style.display = 'flex';
-                waitingForComprovante = false;
-                adjustChatMessagesPadding();
             } else {
                 let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
-                
                 addMessage(errorMessage, 'suellen');
                 ocrStatusMessage.textContent = 'Validação falhou. Verifique o valor e o nome.';
-                pixUploadArea.style.display = 'flex';
-                chatInputArea.style.display = 'none';
-                adjustChatMessagesPadding();
             }
         }
 
-        // Função para enviar as fotos
-        function sendPhotos(amountPaid) {
+        // Função para enviar as fotos com pausas naturais
+        async function sendPhotosWithDelay(amountPaid) {
             const numPhotos = (amountPaid / 10) * 5;
             const photosToSendThisBatch = Math.min(numPhotos, 100 - photosSentCount);
 
@@ -807,15 +811,36 @@
                 for (let i = 0; i < photosToSendThisBatch; i++) {
                     photosSentCount++;
                     const imageUrl = `foto${photosSentCount}.webp`;
+                    
+                    // Adiciona indicador de digitação antes de cada foto
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    removeTypingIndicator();
+                    
                     addMessage('', 'suellen', true, imageUrl);
+                    
+                    // Pausa entre fotos
+                    if (i < photosToSendThisBatch - 1) {
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                    }
                 }
+                
                 if (photosSentCount >= 100) {
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                    removeTypingIndicator();
                     addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
                 }
             } else {
                 if (photosSentCount >= 100) {
-                     addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                    removeTypingIndicator();
+                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
                 } else {
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                    removeTypingIndicator();
                     addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
                 }
             }
@@ -846,7 +871,7 @@
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                }, Math.random() * 4000 + 3000); 
+                }, Math.random() * 4000 + 3000)); 
             }, 4000); 
         };
     </script>
