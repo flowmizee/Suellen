@@ -48,7 +48,7 @@
             border-radius: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
-            position: relative;
+            position: relative; /* Necessário para posicionar o input-area e upload-area */
         }
 
         /* Cabeçalho do chat */
@@ -97,7 +97,7 @@
             flex-direction: column;
             gap: 10px;
             scroll-behavior: smooth; /* Rolagem suave */
-            padding-bottom: 80px; /* Espaço para o campo de input fixo */
+            /* Padding inferior será ajustado via JS para acomodar input e upload area */
         }
 
         /* Bolhas de mensagem */
@@ -220,6 +220,93 @@
             background-color: var(--accent-red);
         }
 
+        /* Estilos para a nova área de upload de PIX */
+        .pix-upload-area {
+            display: none; /* Escondido por padrão */
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--bg-medium);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: absolute;
+            /* bottom será ajustado via JS */
+            width: 100%;
+            z-index: 9; /* Abaixo do chat-input-area */
+            gap: 10px;
+        }
+
+        .pix-preview-container {
+            width: 100%;
+            max-height: 150px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        #receipt-preview {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        /* Esconde o input de arquivo padrão */
+        #receipt-file-input {
+            display: none; 
+        }
+
+        /* Estilos para os botões de upload de comprovante (Foto/PDF) */
+        .pix-upload-area .upload-type-button {
+            width: 100%;
+            border-radius: 25px;
+            height: auto;
+            padding: 10px 20px;
+            background-color: var(--accent-pink);
+            color: var(--text-light);
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            margin-top: 5px;
+        }
+
+        .pix-upload-area .upload-type-button:hover {
+            background-color: var(--accent-red);
+            transform: translateY(-1px);
+        }
+
+        .status-message {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* Estilos para o botão personalizado de "Ver Fotos / Enviar Comprovante" */
+        .custom-action-button {
+            background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
+            color: var(--text-light);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+            align-self: center; /* Centraliza o botão */
+            width: fit-content; /* Ajusta a largura ao conteúdo */
+        }
+
+        .custom-action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
         /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
@@ -229,9 +316,12 @@
             .chat-header {
                 border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
             }
-            /* Ajusta o padding inferior das mensagens para acomodar o teclado virtual */
+            /* Ajusta o padding inferior das mensagens para acomodar o teclado virtual e a área de upload */
             .chat-messages {
-                padding-bottom: 90px; /* Aumenta o padding para garantir visibilidade */
+                /* O padding-bottom será ajustado dinamicamente via JS */
+            }
+            .pix-upload-area {
+                /* bottom será ajustado via JS */
             }
         }
     </style>
@@ -248,10 +338,25 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-            <!-- As mensagens e o indicador de digitação serão adicionados aqui pelo JavaScript -->
+            <!-- As mensagens, o indicador de digitação e o botão personalizado serão adicionados aqui pelo JavaScript -->
         </div>
 
-        <div class="chat-input-area">
+        <!-- Nova seção para upload de comprovante PIX -->
+        <div class="pix-upload-area" id="pix-upload-area">
+            <div class="pix-preview-container">
+                <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
+            </div>
+            <p id="ocr-status-message" class="status-message"></p>
+            <input type="file" id="receipt-file-input"> <!-- Input de arquivo oculto -->
+            <button id="upload-photo-button" class="upload-type-button">
+                Enviar Comprovante (Foto)
+            </button>
+            <button id="upload-pdf-button" class="upload-type-button">
+                Enviar Comprovante (PDF)
+            </button>
+        </div>
+
+        <div class="chat-input-area" id="chat-input-area">
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
             <button id="send-button" class="send-button">
                 <!-- Ícone de envio (seta) em SVG -->
@@ -260,12 +365,23 @@
         </div>
     </div>
 
+    <!-- Inclui a biblioteca Tesseract.js para OCR -->
+    <script src='https://unpkg.com/tesseract.js@5.0.0/dist/tesseract.min.js'></script>
     <script>
         // Variáveis globais para os elementos do chat
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
         const statusText = document.getElementById('status-text');
+        const chatInputArea = document.getElementById('chat-input-area'); // Referência à área de input
+
+        // Novas variáveis para a área de upload de PIX
+        const pixUploadArea = document.getElementById('pix-upload-area');
+        const receiptFileInput = document.getElementById('receipt-file-input');
+        const receiptPreview = document.getElementById('receipt-preview');
+        const uploadPhotoButton = document.getElementById('upload-photo-button'); // Novo botão para foto
+        const uploadPdfButton = document.getElementById('upload-pdf-button');   // Novo botão para PDF
+        const ocrStatusMessage = document.getElementById('ocr-status-message');
 
         // Histórico do chat para a API Gemini
         let chatHistory = [];
@@ -279,9 +395,45 @@
         let expectedPaymentAmount = 0;
         let waitingForComprovante = false;
         let typingIndicatorElement = null; // Para controlar a bolha de digitação
+        let customActionButton = null; // Para controlar o botão personalizado
+
+        // Tesseract.js worker
+        let tesseractWorker = null;
+
+        // Função para ajustar o padding inferior das mensagens e a posição da área de upload
+        function adjustChatMessagesPadding() {
+            const inputAreaHeight = chatInputArea.offsetHeight;
+            const pixUploadAreaHeight = pixUploadArea.offsetHeight;
+            
+            let requiredPadding = inputAreaHeight + 20; // Padding padrão para a área de input
+
+            if (pixUploadArea.style.display === 'flex') {
+                requiredPadding += pixUploadAreaHeight; // Adiciona a altura da área de upload se visível
+                pixUploadArea.style.bottom = `${inputAreaHeight}px`; // Posiciona a área de upload acima do input
+            } else {
+                pixUploadArea.style.bottom = `0px`; // Garante que esteja fora da tela quando oculto
+            }
+            
+            chatMessages.style.paddingBottom = `${requiredPadding}px`;
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o final após o ajuste
+        }
+
+        // Função para inicializar o worker do Tesseract.js
+        async function initializeTesseractWorker() {
+            if (!tesseractWorker) {
+                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
+                try {
+                    tesseractWorker = await Tesseract.createWorker('por'); // 'por' para português
+                    ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
+                } catch (error) {
+                    console.error('Erro ao carregar validador:', error);
+                    ocrStatusMessage.textContent = 'Erro ao carregar validador. Tente novamente.';
+                }
+            }
+        }
 
         // Função para adicionar mensagem ao chat
-        function addMessage(text, sender, isImage = false, imageUrl = '') {
+        function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false) {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', sender);
 
@@ -290,12 +442,28 @@
                 img.src = imageUrl;
                 img.alt = `Foto de Suellen ${photosSentCount}`;
                 messageBubble.appendChild(img);
-            } else {
+            } else if (isPdfPreview) {
+                // Para PDF, mostramos um ícone ou um placeholder genérico
+                messageBubble.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                            <path d="M10 9H8"/>
+                            <path d="M16 13H8"/>
+                            <path d="M16 17H8"/>
+                        </svg>
+                        <span>Comprovante PDF enviado.</span>
+                    </div>
+                `;
+            }
+            else {
                 // Substitui markdown bold (**) por HTML bold (<strong>) para exibição
                 messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             }
 
             chatMessages.appendChild(messageBubble);
+            adjustChatMessagesPadding(); // Ajusta o padding após adicionar nova mensagem
             chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
         }
 
@@ -313,6 +481,7 @@
                 </div>
             `;
             chatMessages.appendChild(typingIndicatorElement);
+            adjustChatMessagesPadding(); // Ajusta o padding após adicionar indicador
             chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o indicador
             statusText.textContent = 'digitando...'; // Atualiza o status do cabeçalho
         }
@@ -324,6 +493,30 @@
                 typingIndicatorElement = null;
             }
             statusText.textContent = 'online'; // Reseta o status do cabeçalho
+            adjustChatMessagesPadding(); // Ajusta o padding após remover indicador
+        }
+
+        // Função para adicionar o botão personalizado
+        function addCustomActionButton(text, onClickHandler) {
+            if (customActionButton) { // Remove o botão existente se houver
+                customActionButton.remove();
+            }
+            customActionButton = document.createElement('button');
+            customActionButton.classList.add('custom-action-button');
+            customActionButton.textContent = text;
+            customActionButton.addEventListener('click', onClickHandler);
+            chatMessages.appendChild(customActionButton);
+            adjustChatMessagesPadding(); // Ajusta o padding para o botão
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o botão
+        }
+
+        // Função para remover o botão personalizado
+        function removeCustomActionButton() {
+            if (customActionButton) {
+                customActionButton.remove();
+                customActionButton = null;
+            }
+            adjustChatMessagesPadding(); // Ajusta o padding após remover o botão
         }
 
         // Função para processar a mensagem do usuário e gerar a resposta da Suellen
@@ -332,15 +525,11 @@
             // Adiciona a mensagem do usuário ao histórico
             chatHistory.push({ role: "user", parts: [{ text: message }] });
 
-            // Lógica para simular o comprovante - esta deve ser uma resposta mais imediata
-            if (waitingForComprovante && message.toLowerCase().startsWith('comprovante')) {
-                handleComprovante(message);
-                waitingForComprovante = false; // Reseta o estado
-                return; // Sai da função para não chamar a API Gemini novamente para o comprovante
-            }
+            // Remove o botão personalizado se ele estiver visível (caso o usuário digite algo em vez de clicar)
+            removeCustomActionButton();
 
-            // Simula o atraso inicial antes de Suellen "começar a digitar"
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Simula o atraso antes de Suellen "começar a digitar" (5 segundos)
+            await new Promise(resolve => setTimeout(resolve, 5000));
 
             // Adiciona o indicador de digitação após o atraso inicial
             addTypingIndicator();
@@ -361,6 +550,19 @@
             Mantenha as respostas bem concisas, como mensagens rápidas de WhatsApp.
             Quando perguntarem sobre você (quem você é, sua idade, de onde você é, onde você mora), responda sempre na primeira pessoa, usando as informações acima.
             Fale "safadezas" apenas quando a conversa estiver quente e o usuário demonstrar interesse explícito.
+
+            **Contexto de Venda de Fotos:**
+            - Você vende packs de fotos sensuais.
+            - O preço é R$10 para 5 fotos.
+            - Os packs são sempre múltiplos de 5 fotos (5, 10, 15, ..., até 100 fotos).
+            - Nunca mencione o número total de fotos disponíveis (100). Apenas diga que "acabou por hoje" quando todas forem enviadas.
+            - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
+            - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
+            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
+            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
+            - A segunda mensagem de PIX deve conter apenas a chave PIX.
+            - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação.
+            - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
             `;
 
             // Constrói o payload para sempre incluir o prompt da persona no início
@@ -388,14 +590,15 @@
                     result.candidates[0].content.parts.length > 0) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
-                    // Simula um atraso adicional antes de enviar a mensagem (2 a 5 segundos)
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                    // Simula um atraso adicional antes de enviar a mensagem (5 a 10 segundos)
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // 5 a 10 segundos
 
                     removeTypingIndicator();
                     addMessage(suellenResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
 
                     // Lógica para identificar a intenção de compra e fornecer dados Pix
+                    // Verifica a resposta da Suellen e a mensagem do usuário para uma QUANTIDADE ESPECÍFICA
                     const quantityMatch = suellenResponse.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
                     let requestedQuantity = 0;
 
@@ -427,23 +630,45 @@
 
                         if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                             expectedPaymentAmount = (requestedQuantity / 5) * 10;
-                            const pixMessage = `Ah, que delícia! ${requestedQuantity} fotos, né? Isso vai ficar em R$ ${expectedPaymentAmount.toFixed(2).replace('.', ',')}, meu bem. 😉\n\nFaz o Pix pra essa chave, tá? \n\n**Chave Pix:** 98981420070\n\nDepois que fizer, me manda o comprovante (pode ser print ou PDF) e confere se o nome do recebedor aparece como Antonio, Renimar, Pinheiro ou Almeida. Assim que confirmar, suas fotos chegam na hora! Mal posso esperar pra te ver com elas...😈`;
                             
-                            addTypingIndicator(); // Mostra o digitando para a informação do Pix
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                            // Mensagens PIX divididas e sutilizadas
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
                             removeTypingIndicator();
-                            addMessage(pixMessage, 'suellen');
-                            chatHistory.push({ role: "model", parts: [{ text: pixMessage }] });
-                            waitingForComprovante = true;
+                            addMessage(`Ah, que delícia! ${requestedQuantity} fotos, né? Isso vai ficar em R$ ${expectedPaymentAmount.toFixed(2).replace('.', ',')}, meu bem. 😉`, 'suellen');
+                            
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
+                            removeTypingIndicator();
+                            addMessage(`Faz o Pix pra essa chave, tá? \n\n**Chave Pix:** 98981420070`, 'suellen');
+
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
+                            removeTypingIndicator();
+                            addMessage(`A chave está no nome do meu assessor… ele cuida dos pagamentos e libera tudo rapidinho pra você aproveitar 🥵 Assim que confirmar, suas fotos chegam na hora! Mal posso esperar pra te ver com elas...😈`, 'suellen');
+                            
+                            // Mostra o botão personalizado para upload do comprovante
+                            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                                chatInputArea.style.display = 'none'; // Esconde a área de input de texto
+                                pixUploadArea.style.display = 'flex'; // Mostra a área de upload
+                                waitingForComprovante = true; // Ativa o estado de espera por comprovante
+                                adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
+                                initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                            });
+
                         } else {
+                            // Esta é a mensagem de erro para quantidades inválidas (não múltiplos de 5 ou fora do range)
                             const errorMessage = `Hmm, amor... pra eu te mandar as fotos, preciso que seja em múltiplos de 5, tá? E no mínimo 5 fotos. Qual quantidade você gostaria? 😉`;
                             addTypingIndicator(); // Mostra o digitando para a mensagem de erro
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // 5 a 10 segundos
                             removeTypingIndicator();
                             addMessage(errorMessage, 'suellen');
                             chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
                         }
                     }
+                    // Não há um 'else' aqui para quando quantityMatch é null.
+                    // Isso significa que se a IA não identificar uma quantidade específica,
+                    // ela continuará a conversa de acordo com o prompt da persona.
 
                 } else {
                     removeTypingIndicator();
@@ -458,24 +683,105 @@
             }
         }
 
-        // Função para lidar com o comprovante simulado
-        function handleComprovante(message) {
-            const parts = message.toLowerCase().split(' ');
-            if (parts.length < 3) {
-                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o valor e o nome no comprovante pra mim, amor?", 'suellen');
+        // Lidar com a seleção do arquivo de comprovante e pré-visualização, e iniciar OCR
+        receiptFileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                receiptPreview.style.display = 'none';
+                ocrStatusMessage.textContent = '';
                 return;
             }
 
-            const simulatedValue = parseFloat(parts[1].replace(',', '.'));
-            const simulatedName = parts.slice(2).join(' ');
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                // Adiciona a pré-visualização do comprovante no chat como uma mensagem do usuário
+                if (file.type.startsWith('image/')) {
+                    addMessage('', 'user', true, e.target.result); // É uma imagem
+                    receiptPreview.src = e.target.result;
+                    receiptPreview.style.display = 'block';
+                } else if (file.type === 'application/pdf') {
+                    addMessage('', 'user', false, '', true); // É um PDF, usa pré-visualização genérica
+                    receiptPreview.style.display = 'none'; // Esconde a pré-visualização da imagem para PDF
+                }
+            };
+            reader.readAsDataURL(file);
 
-            const nameMatches = ['antonio', 'renimar', 'pinheiro', 'almeida'].some(name => simulatedName.includes(name));
+            if (!tesseractWorker) {
+                ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
+                await initializeTesseractWorker();
+                if (!tesseractWorker) return;
+            }
 
-            if (simulatedValue === expectedPaymentAmount && nameMatches) {
+            ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
+            // Desabilita os botões de upload durante o processamento
+            uploadPhotoButton.disabled = true;
+            uploadPdfButton.disabled = true;
+
+            try {
+                addTypingIndicator(); // Suellen "digitando" enquanto processa o OCR
+                
+                const { data: { text } } = await tesseractWorker.recognize(file);
+                console.log('Texto extraído do comprovante:', text);
+                
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Simula o tempo de processamento do OCR
+
+                removeTypingIndicator(); // Remove o indicador de digitação
+                handleComprovante(text); // Passa o texto extraído para o manipulador
+            } catch (error) {
+                console.error('Erro no processamento do comprovante:', error);
+                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
+                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
+            } finally {
+                // Reabilita os botões
+                uploadPhotoButton.disabled = false;
+                uploadPdfButton.disabled = false;
+                receiptFileInput.value = ''; // Limpa o input do arquivo
+            }
+        });
+
+        // Event listeners para os novos botões de upload (Foto/PDF)
+        uploadPhotoButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*'; // Define para aceitar apenas imagens
+            receiptFileInput.click(); // Dispara o clique no input de arquivo oculto
+        });
+
+        uploadPdfButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'application/pdf'; // Define para aceitar apenas PDFs
+            receiptFileInput.click(); // Dispara o clique no input de arquivo oculto
+        });
+
+        // Função para lidar com o comprovante (agora recebe texto extraído)
+        function handleComprovante(extractedText) {
+            // Normaliza o texto para facilitar a correspondência (minúsculas, remove acentos/caracteres especiais se necessário)
+            const normalizedText = extractedText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // Regex para encontrar o valor (ex: R$ 10,00 ou 10.00 ou 10,00)
+            const amountMatch = normalizedText.match(/(?:r\$\s*|rs\s*)?(\d+(?:[.,]\d{2})?)/);
+            let extractedAmount = 0;
+            if (amountMatch && amountMatch[1]) {
+                extractedAmount = parseFloat(amountMatch[1].replace(',', '.'));
+            }
+
+            // Palavras-chave para validação do nome do beneficiário (internamente)
+            const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword));
+
+            console.log(`Valor extraído: ${extractedAmount}, Esperado: ${expectedPaymentAmount}`);
+            console.log(`Nome encontrado: ${nameMatches}, Keywords: ${nameKeywords.join(', ')}`);
+
+            if (extractedAmount === expectedPaymentAmount && nameMatches) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                 sendPhotos(expectedPaymentAmount);
+                ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
+                pixUploadArea.style.display = 'none'; // Esconde a área de upload após o sucesso
+                chatInputArea.style.display = 'flex'; // Mostra a área de input de texto
+                waitingForComprovante = false; // Reseta o estado
+                adjustChatMessagesPadding(); // Ajusta o padding após esconder a área de upload
             } else {
-                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o valor e o nome no comprovante pra mim, amor?", 'suellen');
+                let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
+                
+                addMessage(errorMessage, 'suellen');
+                ocrStatusMessage.textContent = 'Validação falhou. Verifique o valor e o nome.';
             }
         }
 
@@ -489,6 +795,7 @@
             if (photosToSendThisBatch > 0) {
                 for (let i = 0; i < photosToSendThisBatch; i++) {
                     photosSentCount++;
+                    // Altere esta linha para o caminho de suas fotos reais (ex: `foto${photosSentCount}.webp`)
                     const imageUrl = `https://placehold.co/300x400/FF007F/FFFFFF?text=Foto${photosSentCount}`;
                     addMessage('', 'suellen', true, imageUrl);
                 }
@@ -523,12 +830,15 @@
 
         // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
-            addTypingIndicator(); // Mostra o indicador de digitação para a mensagem inicial
-            setTimeout(() => {
-                removeTypingIndicator();
-                addMessage("Olá, meu bem! Que bom te ver por aqui 🙈", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui 🙈" }] });
-            }, 4000); // 4 segundos para a primeira mensagem
+            adjustChatMessagesPadding(); // Ajusta o padding inicial
+            setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
+                addTypingIndicator(); // Mostra o indicador de digitação
+                setTimeout(() => { // Atraso de 3 a 7 segundos para enviar a mensagem
+                    removeTypingIndicator();
+                    addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
+                }, Math.random() * 4000 + 3000); 
+            }, 4000); 
         };
     </script>
 </body>
