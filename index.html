@@ -329,7 +329,6 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
@@ -338,18 +337,14 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-            <!-- As mensagens, o indicador de digitação e o botão personalizado serão adicionados aqui pelo JavaScript -->
-        </div>
+            </div>
 
-        <!-- Nova seção para upload de comprovante PIX -->
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
                 <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
-                <canvas id="pdf-preview-canvas" style="display: none;"></canvas> <!-- Canvas para pré-visualização de PDF -->
-            </div>
+                <canvas id="pdf-preview-canvas" style="display: none;"></canvas> </div>
             <p id="ocr-status-message" class="status-message"></p>
-            <input type="file" id="receipt-file-input"> <!-- Input de arquivo oculto -->
-            <button id="upload-photo-button" class="upload-type-button">
+            <input type="file" id="receipt-file-input"> <button id="upload-photo-button" class="upload-type-button">
                 Enviar Comprovante (Foto)
             </button>
             <button id="upload-pdf-button" class="upload-type-button">
@@ -360,13 +355,11 @@
         <div class="chat-input-area" id="chat-input-area">
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
             <button id="send-button" class="send-button">
-                <!-- Ícone de envio (seta) em SVG -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal"><path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/></svg>
             </button>
         </div>
     </div>
 
-    <!-- Inclui as bibliotecas Tesseract.js e PDF.js para OCR e visualização de PDF -->
     <script src='https://unpkg.com/tesseract.js@5.0.0/dist/tesseract.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js'></script>
     <script>
@@ -426,7 +419,6 @@
             
             // Ajusta o padding inferior para que as mensagens não fiquem por baixo da área de input/upload
             chatMessages.style.paddingBottom = `${bottomPadding}px`;
-            // Ajusta o padding superior para que as mensagens não fiquem por baixo do cabeçalho
             // O padding-top do CSS já é suficiente para o espaçamento inicial.
             chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o final após o ajuste
         }
@@ -908,7 +900,7 @@
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                    // Não forçar scroll para o topo, deixar o padding gerenciar
+                    chatMessages.scrollTop = 0; // Garante que a primeira mensagem fique no topo
                 }, Math.random() * 4000 + 3000); 
             }, 4000); 
         };
