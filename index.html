@@ -44,7 +44,6 @@
             height: 100vh; /* Altura total da viewport, ajustada pelo JS em mobile */
             max-width: 450px; /* Largura máxima para simular um celular */
             margin: 0 auto; /* Centraliza o contêiner */
-            position: relative; /* Necessário para posicionamento absoluto dos filhos */
             background-color: var(--bg-medium);
             border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -128,6 +127,15 @@
 
         .message-bubble img {
             max-width: 100%;
+            max-height: 300px;
+            border-radius: 15px;
+            margin-top: 5px;
+            object-fit: contain;
+        }
+
+        .message-bubble canvas {
+            max-width: 100%;
+            max-height: 300px;
             border-radius: 15px;
             margin-top: 5px;
         }
@@ -804,6 +812,34 @@
             }
         }
 
+        /**
+         * @function extractTextFromPDF
+         * @description Extrai texto de um arquivo PDF para validação
+         * @param {ArrayBuffer} pdfData - Dados do PDF em ArrayBuffer
+         */
+        async function extractTextFromPDF(pdfData) {
+            try {
+                const loadingTask = pdfjsLib.getDocument({data: pdfData});
+                const pdf = await loadingTask.promise;
+                let fullText = '';
+                
+                // Limita a extração às primeiras 3 páginas para performance
+                const numPages = Math.min(pdf.numPages, 3);
+                
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const strings = textContent.items.map(item => item.str);
+                    fullText += strings.join(' ') + '\n';
+                }
+                
+                return fullText;
+            } catch (error) {
+                console.error('Erro ao extrair texto do PDF:', error);
+                return null;
+            }
+        }
+
         // Lidar com a seleção do arquivo de comprovante e pré-visualização, e iniciar OCR
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -842,7 +878,7 @@
             addTypingIndicator();
 
             if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
+                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
                 await initializeTesseractWorker();
                 if (!tesseractWorker) return;
             }
@@ -852,16 +888,29 @@
             uploadPdfButton.disabled = true;
 
             try {
-                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
-                console.log('Texto extraído do comprovante:', text);
+                let extractedText = '';
+                
+                if (file.type.startsWith('image/')) {
+                    // Processamento de imagem com Tesseract
+                    const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
+                    extractedText = text;
+                } else if (file.type === 'application/pdf') {
+                    // Processamento de PDF com pdf.js
+                    extractedText = await extractTextFromPDF(fileDataForOCR);
+                    if (!extractedText) {
+                        throw new Error('Não foi possível extrair texto do PDF');
+                    }
+                }
+                
+                console.log('Texto extraído do comprovante:', extractedText);
                 
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 removeTypingIndicator();
-                handleComprovante(text);
+                handleComprovante(extractedText);
             } catch (error) {
                 console.error('Erro no processamento do comprovante:', error);
-                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
-                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
+                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara ou PDF legível.';
+                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara ou PDF legível? 💋", 'suellen');
                 
                 // Mostra novamente o botão para enviar comprovante
                 addCustomActionButton('Enviar Comprovante Novamente', () => {
@@ -887,6 +936,17 @@
          * @param {string} extractedText - O texto extraído do comprovante via OCR.
          */
         function handleComprovante(extractedText) {
+            if (!extractedText) {
+                addMessage("Não consegui ler o comprovante, amor. Pode me mandar novamente? 💋", 'suellen');
+                addCustomActionButton('Enviar Comprovante Novamente', () => {
+                    chatInputArea.style.display = 'none';
+                    pixUploadArea.style.display = 'flex';
+                    waitingForComprovante = true;
+                    adjustChatMessagesPadding();
+                });
+                return;
+            }
+
             const normalizedText = extractedText.toLowerCase()
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/[^a-z0-9\s.,]/g, "");
@@ -1030,7 +1090,7 @@
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                }, Math.random() * 4000 + 3000)); 
+                }, Math.random() * 4000 + 3000); 
             }, 4000); 
         };
     </script>
