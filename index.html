@@ -597,42 +597,6 @@
         }
 
         /**
-         * @function sendPixMessages
-         * @description Envia as três mensagens pré-programadas com informações do PIX
-         * @param {number} requestedQuantity - Quantidade de fotos solicitadas
-         */
-        async function sendPixMessages(requestedQuantity) {
-            expectedPaymentAmount = (requestedQuantity / 5) * 10;
-            
-            // Mensagem 1: Valor e quantidade
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-            removeTypingIndicator();
-            addMessage(`Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`, 'suellen');
-            
-            // Mensagem 2: Chave PIX
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-            removeTypingIndicator();
-            addMessage(`Minha chave PIX é: \n\n**98981420070**`, 'suellen');
-            
-            // Mensagem 3: Confirmação do assessor
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-            removeTypingIndicator();
-            addMessage(`Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`, 'suellen');
-            
-            // Mostra o botão para enviar comprovante
-            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                chatInputArea.style.display = 'none';
-                pixUploadArea.style.display = 'flex';
-                waitingForComprovante = true;
-                adjustChatMessagesPadding();
-                initializeTesseractWorker();
-            });
-        }
-
-        /**
          * @function processUserMessage
          * @description Processa a mensagem enviada pelo usuário, adiciona ao chat,
          * chama a API Gemini para obter a resposta da Suellen e lida com a lógica de venda de fotos.
@@ -676,7 +640,10 @@
             - Nunca mencione o número total de fotos disponíveis (100). Apenas diga que "acabou por hoje" quando todas forem enviadas.
             - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
             - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
-            - **Se o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), NÃO RESPONDA COM INFORMAÇÕES DE PAGAMENTO. Em vez disso, apenas confirme a quantidade e o sistema enviará automaticamente as mensagens de PIX.**
+            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
+            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
+            - A segunda mensagem de PIX deve conter apenas a chave PIX.
+            - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação.
             - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
             `;
 
@@ -744,8 +711,39 @@
                         }
 
                         if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
-                            // Envia as mensagens pré-programadas do PIX
-                            sendPixMessages(requestedQuantity);
+                            expectedPaymentAmount = (requestedQuantity / 5) * 10;
+                            
+                            // Primeiro envia a mensagem personalizada da IA
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            addMessage(suellenResponse, 'suellen');
+                            
+                            // Depois envia as 3 mensagens pré-programadas do PIX
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            addMessage(`Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`, 'suellen');
+                            
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            addMessage(`Minha chave PIX é: \n\n**98981420070**`, 'suellen'); // Chave PIX fixa
+
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            addMessage(`Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`, 'suellen'); // Mensagem do assessor
+                            
+                            // Mostra o botão personalizado para upload do comprovante
+                            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                                chatInputArea.style.display = 'none'; // Esconde a área de input de texto
+                                pixUploadArea.style.display = 'flex'; // Mostra a área de upload
+                                waitingForComprovante = true; // Ativa o estado de espera por comprovante
+                                adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
+                                initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                            });
+
                         } else {
                             // Esta é a mensagem de erro para quantidades inválidas (não múltiplos de 5 ou fora do range)
                             const errorMessage = `Hmm, amor... pra eu te mandar as fotos, preciso que seja em múltiplos de 5, tá? E no mínimo 5 fotos. Qual quantidade você gostaria? 😉`;
@@ -1006,7 +1004,7 @@
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                }, Math.random() * 4000 + 3000)); 
+                }, Math.random() * 4000 + 3000); 
             }, 4000); 
         };
     </script>
