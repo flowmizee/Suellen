@@ -343,6 +343,32 @@
             object-fit: contain;
         }
 
+        .attachment-button {
+    position: relative;
+}
+
+#attach-button,
+#send-photo-button {
+    left: -0.25rem;  /* um pouquinho para a esquerda */
+    top: -0.2rem;    /* um pouquinho para cima */
+}
+
+@media (max-width: 600px) {
+    #attach-button,
+    #send-photo-button {
+        left: -0.15rem;
+        top: -0.15rem;
+    }
+}
+
+@media (max-width: 400px) {
+    #attach-button,
+    #send-photo-button {
+        left: -0.1rem;
+        top: -0.1rem;
+    }
+}
+
         /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
