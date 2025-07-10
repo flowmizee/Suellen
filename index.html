@@ -267,7 +267,7 @@
 
         /* Esconde o input de arquivo padrão */
         #receipt-file-input {
-            display: none; 
+            display: none;
         }
 
         /* Estilos para os botões de upload de comprovante (Foto/PDF) */
@@ -392,7 +392,7 @@
         const ocrStatusMessage = document.getElementById('ocr-status-message');
 
         let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; 
+        const API_KEY = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
@@ -410,7 +410,7 @@
         function adjustChatContainerHeight() {
             chatContainer.style.height = `${window.innerHeight}px`;
             // Reajusta o padding das mensagens e a posição da área de upload após a altura do container ser definida
-            adjustChatMessagesPadding(); 
+            adjustChatMessagesPadding();
         }
 
         /**
@@ -432,10 +432,10 @@
                 const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
                 currentBottomPadding += pixAreaVisibleHeight;
                 // Posiciona a área de upload exatamente acima da área de input
-                pixUploadArea.style.bottom = `${inputAreaHeight}px`; 
+                pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
                 // Garante que a área de upload não interfira no layout quando oculta
-                pixUploadArea.style.bottom = `0px`; 
+                pixUploadArea.style.bottom = `0px`;
             }
             
             chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
@@ -672,13 +672,6 @@
                     result.candidates[0].content.parts.length > 0) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
-                    // Simula um atraso adicional antes de enviar a mensagem (5 a 10 segundos)
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-
-                    removeTypingIndicator();
-                    addMessage(suellenResponse, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
-
                     // Lógica para identificar a intenção de compra e fornecer dados Pix
                     // Verifica a resposta da Suellen e a mensagem do usuário para uma QUANTIDADE ESPECÍFICA
                     const quantityMatch = suellenResponse.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
@@ -711,29 +704,32 @@
                         }
 
                         if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
+                            // QUANTIDADE VÁLIDA - Prossegue com as mensagens PIX pré-programadas
                             expectedPaymentAmount = (requestedQuantity / 5) * 10;
                             
-                            // Primeiro envia a mensagem personalizada da IA
+                            removeTypingIndicator(); // Garante que o indicador de digitação esteja desativado antes das mensagens PIX
+
+                            // Envia as 3 mensagens PIX pré-programadas
                             addTypingIndicator();
                             await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                             removeTypingIndicator();
-                            addMessage(suellenResponse, 'suellen');
-                            
-                            // Depois envia as 3 mensagens pré-programadas do PIX
-                            addTypingIndicator();
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                            removeTypingIndicator();
-                            addMessage(`Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`, 'suellen');
+                            const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
+                            addMessage(pixMsg1, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
                             
                             addTypingIndicator();
                             await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                             removeTypingIndicator();
-                            addMessage(`Minha chave PIX é: \n\n**98981420070**`, 'suellen'); // Chave PIX fixa
+                            const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
+                            addMessage(pixMsg2, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
 
                             addTypingIndicator();
                             await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                             removeTypingIndicator();
-                            addMessage(`Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`, 'suellen'); // Mensagem do assessor
+                            const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
+                            addMessage(pixMsg3, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
                             
                             // Mostra o botão personalizado para upload do comprovante
                             addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
@@ -745,24 +741,18 @@
                             });
 
                         } else {
-                            // Esta é a mensagem de erro para quantidades inválidas (não múltiplos de 5 ou fora do range)
-                            const errorMessage = `Hmm, amor... pra eu te mandar as fotos, preciso que seja em múltiplos de 5, tá? E no mínimo 5 fotos. Qual quantidade você gostaria? 😉`;
-                            addTypingIndicator(); // Mostra o digitando para a mensagem de erro
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // 5 a 10 segundos
+                            // QUANTIDADE INVÁLIDA - A IA responde com a correção
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // Atraso para a resposta da IA
                             removeTypingIndicator();
-                            addMessage(errorMessage, 'suellen');
-                            chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
+                            addMessage(suellenResponse, 'suellen'); // Usa a resposta da IA para a correção
+                            chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
                         }
                     } else {
-                        // Se a IA não identificou uma quantidade específica, mas o usuário perguntou sobre fotos
-                        // Ex: "Quero ver suas fotos", "Me mostra as fotos", "Quanto custa?"
-                        if (message.toLowerCase().includes('foto') || message.toLowerCase().includes('fotos') || message.toLowerCase().includes('pack') || message.toLowerCase().includes('quanto custa') || message.toLowerCase().includes('preço')) {
-                            addTypingIndicator();
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-                            removeTypingIndicator();
-                            addMessage("Quantas fotos você gostaria, meu bem? 😉", 'suellen');
-                            chatHistory.push({ role: "model", parts: [{ text: "Quantas fotos você gostaria, meu bem? 😉" }] });
-                        }
+                        // NENHUMA QUANTIDADE DETECTADA - A IA responde de forma geral
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // Atraso para a resposta da IA
+                        removeTypingIndicator();
+                        addMessage(suellenResponse, 'suellen'); // Usa a resposta da IA
+                        chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
                     }
 
                 } else {
@@ -878,9 +868,7 @@
 
             // Verifica se contém qualquer um dos nomes ou o nome completo (sem acentos)
             const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-            const fullName = 'antonio renimar pinheiro almeida';
-            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword)) || 
-                               normalizedText.includes(fullName);
+            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword));
 
             // Verifica o valor - procura por padrões como R$10,00 ou 10.00 ou 10,00
             const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
@@ -915,7 +903,7 @@
                     errorMessage += `\n\nO valor esperado era R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}, mas encontrei R$${extractedAmount.toFixed(2).replace('.', ',')} no comprovante.`;
                 }
                 if (!nameMatches) {
-                    errorMessage += "\n\nTambém não encontrei o nome 'Antonio Renimar Pinheiro Almeida' no comprovante.";
+                    errorMessage += "\n\nTambém não encontrei o nome 'Antonio Renimar Pinheiro Almeida' ou partes dele no comprovante.";
                 }
                 
                 addMessage(errorMessage, 'suellen');
