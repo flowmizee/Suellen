@@ -892,7 +892,11 @@
             console.log(`Valor extraído: ${extractedAmount}, Esperado: ${expectedPaymentAmount}`);
             console.log(`Nome encontrado: ${nameMatches}`);
 
-            if (Math.abs(extractedAmount - expectedPaymentAmount) < 0.01 && nameMatches) {
+            // Verifica se o valor extraído está dentro de uma margem de erro aceitável
+            const isAmountValid = Math.abs(extractedAmount - expectedPaymentAmount) <= 0.01 || 
+                                 Math.abs(extractedAmount - expectedPaymentAmount) <= 1; // Aceita diferença de até 1 real
+
+            if (isAmountValid && nameMatches) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                 
                 // Envia as fotos com pausas naturais
@@ -901,7 +905,7 @@
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
                 let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
-                if (Math.abs(extractedAmount - expectedPaymentAmount) >= 0.01) {
+                if (!isAmountValid) {
                     errorMessage += `\n\nO valor esperado era R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}, mas encontrei R$${extractedAmount.toFixed(2).replace('.', ',')} no comprovante.`;
                 }
                 if (!nameMatches) {
