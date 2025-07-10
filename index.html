@@ -868,9 +868,7 @@
 
             // Verifica se contém qualquer um dos nomes ou o nome completo (sem acentos)
             const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-            const fullName = 'antonio renimar pinheiro almeida';
-            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword)) || 
-                               normalizedText.includes(fullName);
+            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword));
 
             // Verifica o valor - procura por padrões como R$10,00 ou 10.00 ou 10,00
             const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
@@ -905,7 +903,7 @@
                     errorMessage += `\n\nO valor esperado era R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}, mas encontrei R$${extractedAmount.toFixed(2).replace('.', ',')} no comprovante.`;
                 }
                 if (!nameMatches) {
-                    errorMessage += "\n\nTambém não encontrei o nome 'Antonio Renimar Pinheiro Almeida' no comprovante.";
+                    errorMessage += "\n\nTambém não encontrei o nome 'Antonio Renimar Pinheiro Almeida' ou partes dele no comprovante.";
                 }
                 
                 addMessage(errorMessage, 'suellen');
