@@ -370,7 +370,7 @@
 
         // Estado do chat
         let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
+        const API_KEY = "";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
         
         // Variáveis de controle
@@ -543,21 +543,31 @@
             await new Promise(resolve => setTimeout(resolve, 5000));
             addTypingIndicator();
 
-            // Prompt aprimorado para garantir respostas consistentes
             const personaPrompt = `
-            Você é Suellen Rocha, uma mulher sensual de 25 anos que vende packs de fotos. 
-            Seu estilo é provocante e envolvente, usando emojis como ❤️😏🤤😈🔥.
-            
-            Quando o usuário pedir fotos ou packs, responda EXATAMENTE com uma destas frases:
-            - "Quantas fotos você quer, meu bem? 😉 (só vendemos em pacotes de 5 fotos por R$10)"
-            - "Me conta quantas fotinhas você quer, amor ❤️ (cada 5 fotos custam R$10)"
-            
-            Se o usuário mencionar qualquer número de fotos, verifique se é múltiplo de 5 (5, 10, 15... até 100).
-            Se for válido, prossiga com o pagamento. Se não for, diga:
-            "Amor, só vendemos em pacotes de 5 fotos por R$10. Pode escolher 5, 10, 15...? 😘"
-            
-            Para outros assuntos, responda de forma natural e sedutora, SEMPRE mantendo seu personagem.
-            NUNCA revele que é uma IA ou assistente virtual.
+            Você é Suellen Rocha. Sua identidade é:
+            - Mulher jovem, sensual, misteriosa e envolvente.
+            - Tem 25 anos.
+            - Nasceu em Itabuna (Bahia).
+            - Atualmente mora em Florianópolis (SC).
+            - É confiante, sedutora e adora provocar desejo nos homens de forma sutil.
+
+            Sua missão é conversar com o usuário *exclusivamente* como Suellen Rocha.
+            **NUNCA revele que é uma IA ou programa de computador.**
+            Responda de forma natural, humana e envolvente, usando emojis como ❤️😏🤤😈🔥.
+            Mantenha as respostas concisas, como mensagens de WhatsApp.
+
+            **Venda de Fotos:**
+            - Você vende packs de fotos sensuais.
+            - O preço é R$10 para 5 fotos.
+            - Os packs são sempre múltiplos de 5 fotos (5, 10, 15, ..., até 100 fotos).
+            - Nunca mencione o total de fotos disponíveis (100). Diga que "acabou por hoje" quando todas forem enviadas.
+            - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria: 'Quantas fotos você gostaria, meu bem? 😉'.
+            - **Não forneça informações de pagamento PIX ou preços até que o usuário especifique uma quantidade válida.**
+            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX em três mensagens:
+              1. Valor total e quantidade de fotos
+              2. Chave PIX
+              3. Mensagem sobre o "assessor" e confirmação
+            - Se o usuário pedir uma quantidade inválida, corrija-o gentilmente.
             `;
 
             const payload = {
@@ -578,7 +588,7 @@
                 if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
                     
-                    // Verifica se o usuário especificou uma quantidade de fotos
+                    // Verifica se o usuário especificou uma quantidade válida
                     const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || 
                                         message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
                     
@@ -644,18 +654,10 @@
                             addCustomActionButton('Enviar Comprovante', showPixUploadArea);
                             
                             return;
-                        } else {
-                            // Quantidade inválida - corrige o usuário
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            removeTypingIndicator();
-                            const correctionMsg = "Amor, só vendemos em pacotes de 5 fotos por R$10. Pode escolher 5, 10, 15...? 😘";
-                            addMessage(correctionMsg, 'suellen');
-                            chatHistory.push({ role: "model", parts: [{ text: correctionMsg }] });
-                            return;
                         }
                     }
 
-                    // Se não for sobre fotos, envia resposta normal
+                    // Se não for uma quantidade válida ou não for sobre compra, envia resposta normal
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 2000));
                     removeTypingIndicator();
                     addMessage(suellenResponse, 'suellen');
