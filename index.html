@@ -319,6 +319,30 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
         }
 
+        /* Botões de anexo no campo de mensagem */
+        .attachment-buttons {
+            position: absolute;
+            right: 80px;
+            bottom: 15px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .attachment-button {
+            width: 30px;
+            height: 30px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .attachment-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         /* Responsividade para telas menores (celulares) */
         @media (max-width: 600px) {
             .chat-container {
@@ -364,6 +388,14 @@
 
         <div class="chat-input-area" id="chat-input-area">
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
+            <div class="attachment-buttons">
+                <button class="attachment-button" id="attach-button">
+                    <img src="anexar.webp" alt="Anexar">
+                </button>
+                <button class="attachment-button" id="send-photo-button">
+                    <img src="enviarfoto.webp" alt="Enviar Foto">
+                </button>
+            </div>
             <button id="send-button" class="send-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal"><path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/></svg>
             </button>
@@ -390,6 +422,8 @@
         const uploadPhotoButton = document.getElementById('upload-photo-button');
         const uploadPdfButton = document.getElementById('upload-pdf-button');
         const ocrStatusMessage = document.getElementById('ocr-status-message');
+        const attachButton = document.getElementById('attach-button');
+        const sendPhotoButton = document.getElementById('send-photo-button');
 
         let chatHistory = [];
         const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
@@ -852,6 +886,17 @@
         uploadPdfButton.addEventListener('click', () => {
             receiptFileInput.accept = 'application/pdf'; // Define para aceitar apenas PDFs
             receiptFileInput.click(); // Dispara o clique no input de arquivo oculto
+        });
+
+        // Event listeners para os botões de anexo
+        attachButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*,application/pdf'; // Aceita ambos os tipos
+            receiptFileInput.click();
+        });
+
+        sendPhotoButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*'; // Aceita apenas imagens
+            receiptFileInput.click();
         });
 
         /**
