@@ -319,11 +319,11 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
         }
 
-        /* Botões de anexo no campo de mensagem - AJUSTE DE POSICIONAMENTO */
+        /* Botões de anexo no campo de mensagem */
         .attachment-buttons {
             position: absolute;
-            right: 85px; /* Movido um pouco para a esquerda */
-            bottom: 18px; /* Movido levemente para cima */
+            right: 80px;
+            bottom: 15px;
             display: flex;
             gap: 5px;
         }
@@ -644,67 +644,6 @@
             // Remove o botão personalizado se ele estiver visível (caso o usuário digite algo em vez de clicar)
             removeCustomActionButton();
 
-            // Verifica se a mensagem contém uma quantidade de fotos solicitada
-            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
-            let requestedQuantity = 0;
-
-            if (quantityMatch) {
-                const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase();
-                switch (numText) {
-                    case 'cinco': requestedQuantity = 5; break;
-                    case 'dez': requestedQuantity = 10; break;
-                    case 'quinze': requestedQuantity = 15; break;
-                    case 'vinte': requestedQuantity = 20; break;
-                    case 'vinte e cinco': requestedQuantity = 25; break;
-                    case 'trinta': requestedQuantity = 30; break;
-                    case 'trinta e cinco': requestedQuantity = 35; break;
-                    case 'quarenta': requestedQuantity = 40; break;
-                    case 'quarenta e cinco': requestedQuantity = 45; break;
-                    case 'cinquenta': requestedQuantity = 50; break;
-                    case 'cinquenta e cinco': requestedQuantity = 55; break;
-                    case 'sessenta': requestedQuantity = 60; break;
-                    case 'sessenta e cinco': requestedQuantity = 65; break;
-                    case 'setenta': requestedQuantity = 70; break;
-                    case 'setenta e cinco': requestedQuantity = 75; break;
-                    case 'oitenta': requestedQuantity = 80; break;
-                    case 'oitenta e cinco': requestedQuantity = 85; break;
-                    case 'noventa': requestedQuantity = 90; break;
-                    case 'noventa e cinco': requestedQuantity = 95; break;
-                    case 'cem': requestedQuantity = 100; break;
-                    default: requestedQuantity = parseInt(numText); break;
-                }
-
-                if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
-                    // QUANTIDADE VÁLIDA - Prossegue com as mensagens PIX pré-programadas
-                    expectedPaymentAmount = (requestedQuantity / 5) * 10;
-                    
-                    // Envia as 3 mensagens PIX pré-programadas imediatamente
-                    const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
-                    addMessage(pixMsg1, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
-                    
-                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
-                    addMessage(pixMsg2, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
-
-                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
-                    addMessage(pixMsg3, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
-                    
-                    // Mostra o botão personalizado para upload do comprovante
-                    addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                        chatInputArea.style.display = 'none'; // Esconde a área de input de texto
-                        pixUploadArea.style.display = 'flex'; // Mostra a área de upload
-                        waitingForComprovante = true; // Ativa o estado de espera por comprovante
-                        adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
-                        initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
-                    });
-
-                    return; // Encerra a função aqui para não processar a resposta da IA
-                }
-            }
-
-            // Se não for uma solicitação de quantidade válida, processa normalmente com a IA
             // Simula o atraso antes de Suellen "começar a digitar" (5 segundos)
             await new Promise(resolve => setTimeout(resolve, 5000));
 
@@ -712,6 +651,7 @@
             addTypingIndicator();
 
             // **PROMPT DA PERSONA APRIMORADO E REFORÇADO**
+            // Este prompt é crucial para manter a persona da Suellen.
             const personaPrompt = `
             Você é Suellen Rocha. Sua identidade é:
             - Mulher jovem, sensual, misteriosa e envolvente.
@@ -742,13 +682,14 @@
             `;
 
             // Constrói o payload para sempre incluir o prompt da persona no início
+            // Isso garante que o modelo sempre tenha as instruções de persona em cada turno.
             const payload = {
                 contents: [
                     {
                         role: "user",
-                        parts: [{ text: personaPrompt }]
+                        parts: [{ text: personaPrompt }] // Prompt da persona como o primeiro turno "user"
                     },
-                    ...chatHistory
+                    ...chatHistory // Em seguida, anexa o histórico de chat real
                 ]
             };
 
@@ -765,10 +706,88 @@
                     result.candidates[0].content.parts.length > 0) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-                    removeTypingIndicator();
-                    addMessage(suellenResponse, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+                    // Lógica para identificar a intenção de compra e fornecer dados Pix
+                    // Verifica a resposta da Suellen e a mensagem do usuário para uma QUANTIDADE ESPECÍFICA
+                    const quantityMatch = suellenResponse.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
+                    let requestedQuantity = 0;
+
+                    if (quantityMatch) {
+                        const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase(); // Pega o grupo de captura ou a string inteira
+                        switch (numText) {
+                            case 'cinco': requestedQuantity = 5; break;
+                            case 'dez': requestedQuantity = 10; break;
+                            case 'quinze': requestedQuantity = 15; break;
+                            case 'vinte': requestedQuantity = 20; break;
+                            case 'vinte e cinco': requestedQuantity = 25; break;
+                            case 'trinta': requestedQuantity = 30; break;
+                            case 'trinta e cinco': requestedQuantity = 35; break;
+                            case 'quarenta': requestedQuantity = 40; break;
+                            case 'quarenta e cinco': requestedQuantity = 45; break;
+                            case 'cinquenta': requestedQuantity = 50; break;
+                            case 'cinquenta e cinco': requestedQuantity = 55; break;
+                            case 'sessenta': requestedQuantity = 60; break;
+                            case 'sessenta e cinco': requestedQuantity = 65; break;
+                            case 'setenta': requestedQuantity = 70; break;
+                            case 'setenta e cinco': requestedQuantity = 75; break;
+                            case 'oitenta': requestedQuantity = 80; break;
+                            case 'oitenta e cinco': requestedQuantity = 85; break;
+                            case 'noventa': requestedQuantity = 90; break;
+                            case 'noventa e cinco': requestedQuantity = 95; break;
+                            case 'cem': requestedQuantity = 100; break;
+                            default: requestedQuantity = parseInt(numText); break;
+                        }
+
+                        if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
+                            // QUANTIDADE VÁLIDA - Prossegue com as mensagens PIX pré-programadas
+                            expectedPaymentAmount = (requestedQuantity / 5) * 10;
+                            
+                            removeTypingIndicator(); // Garante que o indicador de digitação esteja desativado antes das mensagens PIX
+
+                            // Envia as 3 mensagens PIX pré-programadas
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
+                            addMessage(pixMsg1, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
+                            
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
+                            addMessage(pixMsg2, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
+
+                            addTypingIndicator();
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                            removeTypingIndicator();
+                            const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
+                            addMessage(pixMsg3, 'suellen');
+                            chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
+                            
+                            // Mostra o botão personalizado para upload do comprovante
+                            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                                chatInputArea.style.display = 'none'; // Esconde a área de input de texto
+                                pixUploadArea.style.display = 'flex'; // Mostra a área de upload
+                                waitingForComprovante = true; // Ativa o estado de espera por comprovante
+                                adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
+                                initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                            });
+
+                        } else {
+                            // QUANTIDADE INVÁLIDA - A IA responde com a correção
+                            await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // Atraso para a resposta da IA
+                            removeTypingIndicator();
+                            addMessage(suellenResponse, 'suellen'); // Usa a resposta da IA para a correção
+                            chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+                        }
+                    } else {
+                        // NENHUMA QUANTIDADE DETECTADA - A IA responde de forma geral
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000)); // Atraso para a resposta da IA
+                        removeTypingIndicator();
+                        addMessage(suellenResponse, 'suellen'); // Usa a resposta da IA
+                        chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+                    }
 
                 } else {
                     removeTypingIndicator();
@@ -788,37 +807,39 @@
             const file = event.target.files[0];
             if (!file) {
                 receiptPreview.style.display = 'none';
-                pdfPreviewCanvas.style.display = 'none';
+                pdfPreviewCanvas.style.display = 'none'; // Esconde o canvas também
                 ocrStatusMessage.textContent = '';
                 return;
             }
 
             const reader = new FileReader();
-            let fileDataForOCR;
+            let fileDataForOCR; // Para armazenar o dado do file para o Tesseract
 
             // Lógica para adicionar a pré-visualização do comprovante no chat como uma mensagem do usuário
             if (file.type.startsWith('image/')) {
                 reader.onload = async (e) => {
-                    await addMessage('', 'user', true, e.target.result);
+                    await addMessage('', 'user', true, e.target.result); // Adiciona a imagem ao chat
                     receiptPreview.src = e.target.result;
                     receiptPreview.style.display = 'block';
-                    pdfPreviewCanvas.style.display = 'none';
-                    fileDataForOCR = e.target.result;
+                    pdfPreviewCanvas.style.display = 'none'; // Garante que o canvas esteja oculto
+                    fileDataForOCR = e.target.result; // Imagem em base64 para OCR
                 };
                 reader.readAsDataURL(file);
             } else if (file.type === 'application/pdf') {
                 reader.onload = async (e) => {
-                    await addMessage('', 'user', false, '', true, e.target.result);
-                    receiptPreview.style.display = 'none';
-                    pdfPreviewCanvas.style.display = 'block';
-                    fileDataForOCR = e.target.result;
+                    await addMessage('', 'user', false, '', true, e.target.result); // Adiciona o PDF ao chat (renderizado no canvas)
+                    receiptPreview.style.display = 'none'; // Esconde a pré-visualização da imagem
+                    pdfPreviewCanvas.style.display = 'block'; // Mostra o canvas
+                    fileDataForOCR = e.target.result; // ArrayBuffer do PDF para OCR
                 };
-                reader.readAsArrayBuffer(file);
+                reader.readAsArrayBuffer(file); // Lê PDF como ArrayBuffer
             }
 
+            // Aguarda a leitura do arquivo ser concluída e a mensagem do usuário ser adicionada
             await new Promise(resolve => reader.onloadend = resolve);
             
-            addTypingIndicator();
+            // Agora o typing indicator aparece GARANTIDAMENTE depois do comprovante do usuário
+            addTypingIndicator(); 
 
             if (!tesseractWorker) {
                 ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
@@ -827,73 +848,83 @@
             }
 
             ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
+            // Desabilita os botões de upload durante o processamento
             uploadPhotoButton.disabled = true;
             uploadPdfButton.disabled = true;
 
             try {
-                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
+                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR); // Usa o dado lido para OCR
                 console.log('Texto extraído do comprovante:', text);
                 
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                removeTypingIndicator();
-                handleComprovante(text);
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Simula o tempo de processamento do OCR
+
+                removeTypingIndicator(); // Remove o indicador de digitação
+                handleComprovante(text); // Passa o texto extraído para o manipulador
             } catch (error) {
                 console.error('Erro no processamento do comprovante:', error);
                 ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
                 addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
             } finally {
+                // Reabilita os botões
                 uploadPhotoButton.disabled = false;
                 uploadPdfButton.disabled = false;
-                receiptFileInput.value = '';
+                receiptFileInput.value = ''; // Limpa o input do arquivo
                 
+                // Fecha a área de upload independente do resultado e mostra a área de input
                 pixUploadArea.style.display = 'none';
                 chatInputArea.style.display = 'flex';
-                adjustChatMessagesPadding();
+                adjustChatMessagesPadding(); // Reajusta o padding para o estado normal
             }
         });
 
-        // Event listeners para os botões de upload
+        // Event listeners para os novos botões de upload (Foto/PDF)
         uploadPhotoButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*';
-            receiptFileInput.click();
+            receiptFileInput.accept = 'image/*'; // Define para aceitar apenas imagens
+            receiptFileInput.click(); // Dispara o clique no input de arquivo oculto
         });
 
         uploadPdfButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'application/pdf';
-            receiptFileInput.click();
+            receiptFileInput.accept = 'application/pdf'; // Define para aceitar apenas PDFs
+            receiptFileInput.click(); // Dispara o clique no input de arquivo oculto
         });
 
         // Event listeners para os botões de anexo
         attachButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*,application/pdf';
+            receiptFileInput.accept = 'image/*,application/pdf'; // Aceita ambos os tipos
             receiptFileInput.click();
         });
 
         sendPhotoButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*';
+            receiptFileInput.accept = 'image/*'; // Aceita apenas imagens
             receiptFileInput.click();
         });
 
         /**
          * @function handleComprovante
          * @description Lida com o texto extraído do comprovante para validar o pagamento.
+         * Compara o valor extraído e palavras-chave do nome do beneficiário.
          * @param {string} extractedText - O texto extraído do comprovante via OCR.
          */
         function handleComprovante(extractedText) {
+            // Normaliza o texto para facilitar a correspondência (minúsculas, remove acentos/caracteres especiais)
             const normalizedText = extractedText.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9\s.,]/g, "");
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/[^a-z0-9\s.,]/g, ""); // Remove caracteres especiais, mantendo números, pontos e vírgulas
 
+            // Verifica se contém qualquer um dos nomes ou o nome completo (sem acentos)
             const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
             const fullName = 'antonio renimar pinheiro almeida';
             const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword)) || 
                                normalizedText.includes(fullName);
 
+            // Verifica o valor - procura por padrões como R$10,00 ou 10.00 ou 10,00
             const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
             let extractedAmount = 0;
             let match;
             
+            // Procura todos os valores no texto e pega o maior (para evitar falsos positivos com pequenos valores)
             while ((match = amountPattern.exec(normalizedText)) !== null) {
+                // Converte para número, tratando tanto . quanto , como separador decimal
                 const amountStr = match[1].replace(',', '.');
                 const currentAmount = parseFloat(amountStr);
                 if (currentAmount > extractedAmount) {
@@ -901,14 +932,24 @@
                 }
             }
 
+            // Arredonda para 2 casas decimais para evitar problemas com comparação de float
             extractedAmount = Math.round(extractedAmount * 100) / 100;
             expectedPaymentAmount = Math.round(expectedPaymentAmount * 100) / 100;
 
+            console.log(`Valor extraído: ${extractedAmount}, Esperado: ${expectedPaymentAmount}`);
+            console.log(`Nome encontrado: ${nameMatches}`);
+
+            // Verifica se o valor extraído é igual ao esperado (com margem de erro pequena)
             const isAmountValid = Math.abs(extractedAmount - expectedPaymentAmount) < 0.01;
             
+            // Se o valor for válido OU o nome estiver correto, considera como pagamento confirmado
+            // (Alguns comprovantes podem não ter o nome claro, mas o valor está certo)
             if ((isAmountValid || nameMatches) && (isAmountValid || extractedAmount > 0)) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
+                
+                // Envia as fotos com pausas naturais
                 sendPhotosWithDelay(expectedPaymentAmount);
+                
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
                 let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
@@ -926,7 +967,8 @@
 
         /**
          * @function sendPhotosWithDelay
-         * @description Envia as fotos para o chat com base no valor pago, garantindo fotos únicas.
+         * @description Envia as fotos para o chat com base no valor pago, com atrasos e indicador de digitação.
+         * Limita o número de fotos a um máximo de 100 no total.
          * @param {number} amountPaid - O valor do pagamento PIX confirmado.
          */
         async function sendPhotosWithDelay(amountPaid) {
@@ -938,14 +980,16 @@
                     photosSentCount++;
                     const imageUrl = `foto${photosSentCount}.webp`;
                     
+                    // Adiciona indicador de digitação antes de cada foto
                     addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500)); // Pequena pausa antes de enviar a foto
                     removeTypingIndicator();
                     
                     addMessage('', 'suellen', true, imageUrl);
                     
+                    // Pausa entre fotos
                     if (i < photosToSendThisBatch - 1) {
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000)); // Pausa mais longa entre fotos
                     }
                 }
                 
@@ -986,16 +1030,19 @@
 
         // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
+            // Ajusta a altura inicial do chat-container para a altura real da viewport
             adjustChatContainerHeight();
 
+            // Adiciona listeners para o evento resize do window e visualViewport
+            // para ajustar o layout quando o teclado virtual aparece/desaparece ou a orientação muda.
             window.addEventListener('resize', adjustChatContainerHeight);
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
-            setTimeout(() => {
-                addTypingIndicator();
-                setTimeout(() => {
+            setTimeout(() => { // Atraso de 4 segundos antes de começar a digitar
+                addTypingIndicator(); // Mostra o indicador de digitação
+                setTimeout(() => { // Atraso de 3 a 7 segundos para enviar a mensagem
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
