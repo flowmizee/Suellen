@@ -402,7 +402,7 @@
 
         // Chat state variables
         let chatHistory = [];
-        const API_KEY = "";
+        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
@@ -704,8 +704,8 @@
             - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
             - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
             - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
-            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
-            - A segunda mensagem de PIX deve conter apenas a chave PIX.
+            - A primeira mensagem de PIX deve incluir apenas o valor total e a quantidade de fotos.
+            - A segunda mensagem de PIX deve conter apenas a chave PIX 98981420070.
             - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação.
             - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
             `;
