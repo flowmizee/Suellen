@@ -1,319 +1,326 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Suellen Rocha - Chat Sexy</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-    }
-    .message {
-      max-width: 70%;
-      padding: 10px 15px;
-      margin-bottom: 10px;
-      border-radius: 20px;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-    }
-    .bot {
-      background: #ff4f81;
-      align-self: flex-start;
-    }
-    .user {
-      background: #444;
-      align-self: flex-end;
-    }
-    .typing-indicator {
-      display: none;
-      margin-bottom: 10px;
-      font-style: italic;
-      color: #ccc;
-      font-size: 14px;
-    }
-    .input-area {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      background: #2b2b2b;
-      border-top: 1px solid #444;
-    }
-    .input-area input {
-      flex: 1;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 30px;
-      outline: none;
-      font-size: 16px;
-      background: #3a3a3a;
-      color: #fff;
-    }
-    .icons {
-      display: flex;
-      gap: 10px;
-      margin-left: 10px;
-    }
-    .icons img {
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      filter: brightness(1.2);
-      transition: filter 0.2s;
-    }
-    .icons img:hover {
-      filter: brightness(0.8);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Suellen Rocha - Chat Sexy</title>
+<style>
+  /* Reset e estilo geral */
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #ECE5DD;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 420px;
+    height: 90vh;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,.15);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  /* Header estilo WhatsApp */
+  header {
+    background: #075E54;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+  }
+  header img#perfil {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+    border: 2px solid #25D366;
+  }
+  header h1 {
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+    user-select: none;
+  }
+
+  /* Área do chat */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 15px;
+    background: #ECE5DD;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  /* Balão de mensagem */
+  .msg {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.3;
+    word-wrap: break-word;
+    white-space: pre-line;
+  }
+  .msg.bot {
+    background: #DCF8C6;
+    align-self: flex-start;
+    color: #202c33;
+  }
+  .msg.user {
+    background: #25D366;
+    color: white;
+    align-self: flex-end;
+  }
+  /* Indicador de digitação */
+  #typing {
+    font-style: italic;
+    font-size: 13px;
+    color: #555;
+    margin-left: 5px;
+    display: none;
+  }
+
+  /* Área de input + ícones */
+  #input-area {
+    background: #f0f0f0;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #ddd;
+  }
+  #input-area input[type="text"] {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 14px;
+    font-size: 16px;
+    outline: none;
+  }
+  #input-area .icon-btn {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+  }
+  #input-area .icon-btn:hover {
+    filter: brightness(0.85);
+  }
+
+</style>
 </head>
 <body>
-  <div class="chat" id="chat">
-    <div class="typing-indicator" id="typing">Digitando...</div>
+  <div id="app">
+    <header>
+      <img src="perfil.webp" alt="Perfil Suellen Rocha" id="perfil" />
+      <h1>Suellen Rocha</h1>
+    </header>
+    <div id="chat"></div>
+    <div id="typing">Digitando...</div>
+    <form id="input-area" onsubmit="return false;">
+      <input type="text" id="input" autocomplete="off" placeholder="Digite aqui..." />
+      <img src="anexar.webp" alt="Anexar" title="Anexar comprovante" class="icon-btn" id="btnAttach" />
+      <img src="enviarfoto.webp" alt="Enviar" title="Enviar mensagem" class="icon-btn" id="btnSend" />
+    </form>
   </div>
 
-  <div class="input-area">
-    <input type="text" id="input" placeholder="Digite algo..." autocomplete="off" />
-    <div class="icons">
-      <img src="anexar.webp" alt="Anexar Comprovante" title="Anexar Comprovante" id="attachBtn" />
-      <img src="enviarfoto.webp" alt="Enviar Mensagem" title="Enviar" id="sendBtn" />
-    </div>
-  </div>
+<script>
+  // === CONFIGURAÇÕES ===
+  const API_KEY = "COLOQUE_AQUI_SUA_CHAVE_API_GEMINI";
+  const CHAT_API_URL = "https://api.gemini.ai/v1/chat/completions"; // Exemplo para Gemini
+  const OCR_API_URL = "https://api.gemini.ai/v1/ocr"; // Exemplo OCR Gemini
+  const nomesValidos = ["antonio", "renimar", "pinheiro", "almeida"];
+  const precosFotos = {
+    10: 5, 20: 10, 30: 15, 40: 20, 50: 25, 60: 30, 70: 35,
+    80: 40, 90: 45, 100: 50, 110: 55, 120: 60, 130: 65, 140: 70,
+    150: 75, 160: 80, 170: 85, 180: 90, 190: 95, 200: 100
+  };
+  let fotosDisponiveis = Array.from({length:100}, (_,i) => `foto${i+1}.webp`);
 
-  <script>
-    // CONFIGURAÇÕES DA API
-    const API_KEY = "SUA_CHAVE_DE_API_AQUI";
-    const CHAT_API_URL = "https://api.seu-chat-ia.com/v1/chat/completions"; // exemplo OpenAI, ajuste conforme sua API
-    const OCR_API_URL = "https://api.seu-ocr.com/parse"; // ajuste pra sua API OCR que aceita foto/PDF
+  // === ELEMENTOS DOM ===
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const btnSend = document.getElementById("btnSend");
+  const btnAttach = document.getElementById("btnAttach");
+  const typing = document.getElementById("typing");
 
-    // Controle de fotos e preços
-    let fotosDisponiveis = Array.from({ length: 100 }, (_, i) => `foto${i + 1}.webp`);
+  // === FUNÇÕES DE UTILIDADE ===
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-    const precos = {
-      10: 5, 20: 10, 30: 15, 40: 20, 50: 25, 60: 30, 70: 35,
-      80: 40, 90: 45, 100: 50, 110: 55, 120: 60, 130: 65, 140: 70,
-      150: 75, 160: 80, 170: 85, 180: 90, 190: 95, 200: 100
+  function scrollToBottom(){
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function appendMessage(text, fromBot=true){
+    const div = document.createElement("div");
+    div.className = "msg " + (fromBot ? "bot" : "user");
+    div.textContent = text;
+    chat.appendChild(div);
+    scrollToBottom();
+  }
+
+  async function botReply(text){
+    // Delay 3s invisível + 4s digitando
+    await wait(3000);
+    typing.style.display = "block";
+    await wait(4000);
+    typing.style.display = "none";
+    appendMessage(text,true);
+  }
+
+  // Valida quantidade enviada pelo usuário
+  function validarQtdFotos(qtd){
+    if(!Number.isInteger(qtd)) return false;
+    if(qtd < 5 || qtd > 100) return false;
+    if(qtd % 5 !== 0) return false;
+    return true;
+  }
+
+  // Validação do comprovante via OCR chamando API Gemini (exemplo)
+  async function processarOCR(file){
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch(OCR_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer "+API_KEY
+        },
+        body: formData
+      });
+      if(!res.ok) throw new Error("Erro OCR");
+      const data = await res.json();
+      // Supondo que 'text' contenha o texto extraído do comprovante
+      return data.text || "";
+    } catch(e){
+      console.error(e);
+      return "";
+    }
+  }
+
+  // Verifica se comprovante é válido
+  function checarComprovante(textoOCR){
+    const texto = textoOCR.toLowerCase().replace(/\s+/g, "");
+    let valorEncontrado = null;
+    for(const val in precosFotos){
+      const valNorm = val.toLowerCase().replace(/\s+/g,"");
+      if(texto.includes(valNorm)){
+        valorEncontrado = parseInt(val);
+        break;
+      }
+    }
+    const nomeValido = nomesValidos.some(nome => texto.includes(nome));
+    return {valorEncontrado, nomeValido};
+  }
+
+  // Enviar fotos proporcionais sem repetição
+  async function enviarFotos(qtd){
+    const fotosEnviar = fotosDisponiveis.splice(0, qtd);
+    if(fotosEnviar.length === 0){
+      await botReply("Já te mandei todas as fotos, meu bem... ❤️");
+      return;
+    }
+    await botReply(`Recebi seu Pix e tô mandando as ${qtd} fotos mais provocantes só pra você... 😏🤤`);
+    for(let i=0; i<fotosEnviar.length; i++){
+      await wait(800);
+      appendMessage(`📷 ${fotosEnviar[i]}`, true);
+    }
+  }
+
+  // Função que chama API Gemini para resposta de IA
+  async function responderIA(mensagemUsuario){
+    const body = {
+      model: "gpt-4o-mini",
+      messages: [
+        {role:"system", content:
+`Você é Suellen Rocha, mulher sensual, misteriosa e envolvente.
+Tem 25 anos, nasceu em Itabuna (Bahia) e mora em Florianópolis (SC).
+Você é segura, provocante, usa emojis ❤️😏🤤😈🔥.
+Nunca diga que é IA ou robô.
+Converse de forma sexy, vendendo pacotes de fotos sensuais (não explícitas).
+Valide comprovantes via OCR e libere fotos conforme o valor pago.`
+        },
+        {role:"user", content: mensagemUsuario}
+      ],
+      temperature: 0.8
     };
 
-    const nomesValidos = ["Antonio", "Renimar", "Pinheiro", "Almeida"];
-
-    const promptInicialIA = `Você é Suellen Rocha, uma mulher jovem, sensual, misteriosa e envolvente.
-Tem 25 anos, nasceu em Itabuna (Bahia) e mora atualmente em Florianópolis (SC).
-Você é segura, provocante e adora seduzir com charme e naturalidade.
-Sempre usa emojis como ❤️😏🤤😈🔥 em suas mensagens.
-Nunca diga que é uma IA, robô, chatbot ou qualquer sistema.
-Fale como uma mulher real, humana e envolvente.
-Função:
-- Conversar de forma sexy e provocante.
-- Vender pacotes de fotos sensuais.
-- Validar comprovantes via OCR.
-- Liberar fotos automaticamente conforme pagamento.
-`;
-
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
-    const typing = document.getElementById("typing");
-    const attachBtn = document.getElementById("attachBtn");
-    const sendBtn = document.getElementById("sendBtn");
-
-    function appendMessage(text, isBot = true) {
-      const div = document.createElement("div");
-      div.className = `message ${isBot ? "bot" : "user"}`;
-      div.textContent = text;
-      chat.insertBefore(div, typing);
-      chat.scrollTop = chat.scrollHeight;
+    try {
+      const res = await fetch(CHAT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + API_KEY
+        },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error("Erro chat IA");
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "Hmm... me conta mais, amor 😈";
+    } catch(err){
+      console.error(err);
+      return "Ops, deu ruim aqui... tenta de novo, meu bem 😈";
     }
+  }
 
-    async function wait(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+  // Lógica do envio de mensagem do usuário
+  async function enviarMensagem(){
+    const texto = input.value.trim();
+    if(!texto) return;
+    appendMessage(texto, false);
+    input.value = "";
+
+    const qtd = parseInt(texto);
+
+    if(validarQtdFotos(qtd)){
+      const valor = qtd * 2;
+      // Envia as 3 mensagens separadas com delays
+      await botReply(`😈 Amor, ${qtd} fotinhas vão te deixar maluco... Vai ser só R$ ${valor}, tá bom?`);
+      await botReply(`🔥 Minha chave Pix é: 98981420070`);
+      await botReply(`😏 Tá no nome do meu assessor... me manda o comprovante aqui assim que fizer o Pix 💋`);
+    } else {
+      // Resposta da IA Gemini
+      const resposta = await responderIA(texto);
+      await botReply(resposta);
     }
+  }
 
-    async function delayedBotResponse(text) {
-      await wait(3000); // invisível
-      typing.style.display = "block";
-      await wait(4000); // digitando
-      typing.style.display = "none";
-      appendMessage(text, true);
-    }
+  // Botões
+  btnSend.addEventListener("click", enviarMensagem);
+  input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); enviarMensagem(); } });
 
-    // Verifica se a mensagem é número válido para compra fotos (múltiplos de 5 e limite)
-    function validarQtdFotos(qtd) {
-      if (!Number.isInteger(qtd)) return false;
-      if (qtd < 5 || qtd > 100) return false;
-      if (qtd % 5 !== 0) return false;
-      return true;
-    }
-
-    // Mensagem da IA - chamada API chat GPT
-    async function chatComIA(mensagemUsuario) {
-      const messages = [
-        { role: "system", content: promptInicialIA },
-        { role: "user", content: mensagemUsuario }
-      ];
-
-      try {
-        const response = await fetch(CHAT_API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini", // ou o modelo da sua API
-            messages,
-            temperature: 0.8
-          })
-        });
-
-        if (!response.ok) throw new Error("Erro na API de chat");
-
-        const data = await response.json();
-        // Exemplo OpenAI: data.choices[0].message.content
-        return data.choices?.[0]?.message?.content || "Hmm... me conta mais... 😏🔥";
-      } catch (err) {
-        console.error(err);
-        return "Ops, deu um problema aqui, tenta de novo meu bem 😈";
-      }
-    }
-
-    // Valida comprovante via OCR (imagem ou PDF)
-    async function validarComprovante(file) {
-      // FormData para enviar arquivo
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-        const response = await fetch(OCR_API_URL, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${API_KEY}`
-            // Não colocar Content-Type ao usar FormData, o browser seta
-          },
-          body: formData
-        });
-
-        if (!response.ok) throw new Error("Erro na API OCR");
-
-        const data = await response.json();
-
-        // Aqui a resposta deve conter texto extraído. Ajuste conforme sua API.
-        // Supondo que o texto extraído esteja em data.text
-        return data.text || "";
-      } catch (err) {
-        console.error(err);
-        return "";
-      }
-    }
-
-    // Processa comprovante OCR e checa valor + nome válido
-    function checarComprovante(textoOCR) {
-      // Tira espaços e normaliza
-      textoOCR = textoOCR.toLowerCase().replace(/\s+/g, "");
-      // Checa valores
-      let valorEncontrado = null;
-      for (const val in precos) {
-        const valNorm = val.toLowerCase().replace(/\s+/g, "");
-        if (textoOCR.includes(valNorm)) {
-          valorEncontrado = parseInt(val);
-          break;
-        }
-      }
-
-      // Checa nomes
-      const nomeValido = nomesValidos.some(nome =>
-        textoOCR.includes(nome.toLowerCase())
-      );
-
-      return { valorEncontrado, nomeValido };
-    }
-
-    // Envia fotos conforme qtd, sem repetir
-    async function enviarFotos(qtd) {
-      const fotosEnviar = fotosDisponiveis.splice(0, qtd);
-      if (fotosEnviar.length === 0) {
-        await delayedBotResponse("Ai meu amor, já te mandei todas as fotos 😢");
-        return;
-      }
-      await delayedBotResponse(`Recebi seu Pix e tô mandando as ${qtd} fotos mais provocantes só pra você... 😏🤤`);
-
-      for (let i = 0; i < fotosEnviar.length; i++) {
-        await wait(1000);
-        appendMessage(`📷 ${fotosEnviar[i]}`, true);
-      }
-    }
-
-    // Manipula envio do input (texto)
-    async function enviarTexto() {
-      const texto = input.value.trim();
-      if (!texto) return;
-      appendMessage(texto, false);
-      input.value = "";
-
-      const qtdFotos = parseInt(texto);
-
-      if (validarQtdFotos(qtdFotos)) {
-        // Envia 3 mensagens sobre pagamento
-        const valor = qtdFotos * 2;
-
-        await delayedBotResponse(`😈 Amor, ${qtdFotos} fotinhas vão te deixar maluco... Vai ser só R$ ${valor}, tá bom?`);
-        await delayedBotResponse(`🔥 Minha chave Pix é: 98981420070`);
-        await delayedBotResponse(`😏 Tá no nome do meu assessor... me manda o comprovante aqui assim que fizer o Pix 💋`);
-
+  // Upload comprovante
+  btnAttach.addEventListener("click", () => {
+    const inputFile = document.createElement("input");
+    inputFile.type = "file";
+    inputFile.accept = "image/*,application/pdf";
+    inputFile.onchange = async () => {
+      const file = inputFile.files[0];
+      if(!file) return;
+      appendMessage("📎 Comprovante enviado...", false);
+      const textoOCR = await processarOCR(file);
+      const { valorEncontrado, nomeValido } = checarComprovante(textoOCR);
+      if(valorEncontrado && nomeValido){
+        const qtdFotos = precosFotos[valorEncontrado];
+        await botReply(`Recebi seu Pix de R$ ${valorEncontrado}, gostoso 😈`);
+        await enviarFotos(qtdFotos);
       } else {
-        // Resposta da IA
-        const respostaIA = await chatComIA(texto);
-        await delayedBotResponse(respostaIA);
+        await botReply("Awn... não consegui validar seu comprovante 😢 Manda outro, por favor?");
       }
-    }
-
-    // Upload e envio comprovante
-    attachBtn.onclick = async () => {
-      const inputFile = document.createElement("input");
-      inputFile.type = "file";
-      inputFile.accept = "image/*,application/pdf";
-      inputFile.onchange = async () => {
-        const file = inputFile.files[0];
-        if (!file) return;
-
-        appendMessage("📎 Comprovante enviado...", false);
-
-        const textoOCR = await validarComprovante(file);
-        const { valorEncontrado, nomeValido } = checarComprovante(textoOCR);
-
-        if (valorEncontrado && nomeValido) {
-          const qtdFotos = precos[valorEncontrado];
-          await delayedBotResponse(`Recebi seu Pix de R$ ${valorEncontrado}, gostoso 😈`);
-          await enviarFotos(qtdFotos);
-        } else {
-          await delayedBotResponse("Awn... não consegui validar seu comprovante 😢 Manda outro, por favor?");
-        }
-      };
-      inputFile.click();
     };
+    inputFile.click();
+  });
 
-    sendBtn.onclick = enviarTexto;
-
-    // Enter envia mensagem
-    input.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        enviarTexto();
-      }
-    });
-
-    // Mensagem inicial
-    window.onload = () => {
-      delayedBotResponse("Oiê, meu bem! Que bom te ver por aqui... 🙈");
-    };
-  </script>
+  // Mensagem inicial com delay conforme pedido
+  window.onload = () => {
+    botReply("Oiê, meu bem! Que bom te ver por aqui... 🙈");
+  };
+</script>
 </body>
 </html>
