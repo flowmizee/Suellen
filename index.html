@@ -44,6 +44,7 @@
             height: 100vh; /* Altura total da viewport, ajustada pelo JS em mobile */
             max-width: 450px; /* Largura máxima para simular um celular */
             margin: 0 auto; /* Centraliza o contêiner */
+            position: relative; /* Necessário para posicionamento absoluto dos filhos */
             background-color: var(--bg-medium);
             border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -127,15 +128,6 @@
 
         .message-bubble img {
             max-width: 100%;
-            max-height: 300px;
-            border-radius: 15px;
-            margin-top: 5px;
-            object-fit: contain;
-        }
-
-        .message-bubble canvas {
-            max-width: 100%;
-            max-height: 300px;
             border-radius: 15px;
             margin-top: 5px;
         }
@@ -434,7 +426,7 @@
         const sendPhotoButton = document.getElementById('send-photo-button');
 
         let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+        const API_KEY = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
@@ -639,50 +631,6 @@
         }
 
         /**
-         * @function sendPixMessages
-         * @description Envia as mensagens PIX pré-programadas com atrasos entre elas
-         * @param {number} requestedQuantity - Quantidade de fotos solicitadas
-         */
-        async function sendPixMessages(requestedQuantity) {
-            expectedPaymentAmount = (requestedQuantity / 5) * 10;
-            
-            // Primeira mensagem PIX
-            const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            removeTypingIndicator();
-            addMessage(pixMsg1, 'suellen');
-            chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
-            
-            // Segunda mensagem PIX (com atraso)
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            removeTypingIndicator();
-            const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
-            addMessage(pixMsg2, 'suellen');
-            chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
-
-            // Terceira mensagem PIX (com atraso)
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            addTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            removeTypingIndicator();
-            const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
-            addMessage(pixMsg3, 'suellen');
-            chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
-            
-            // Mostra o botão personalizado para upload do comprovante
-            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                chatInputArea.style.display = 'none'; // Esconde a área de input de texto
-                pixUploadArea.style.display = 'flex'; // Mostra a área de upload
-                waitingForComprovante = true; // Ativa o estado de espera por comprovante
-                adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
-                initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
-            });
-        }
-
-        /**
          * @function processUserMessage
          * @description Processa a mensagem enviada pelo usuário, adiciona ao chat,
          * chama a API Gemini para obter a resposta da Suellen e lida com a lógica de venda de fotos.
@@ -728,7 +676,39 @@
 
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                     // QUANTIDADE VÁLIDA - Prossegue com as mensagens PIX pré-programadas
-                    await sendPixMessages(requestedQuantity);
+                    expectedPaymentAmount = (requestedQuantity / 5) * 10;
+                    
+                    // Envia as 3 mensagens PIX pré-programadas com atraso
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000)); // Delay antes da primeira mensagem
+                    removeTypingIndicator();
+                    const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
+                    addMessage(pixMsg1, 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
+                    
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000)); // Delay antes da segunda mensagem
+                    removeTypingIndicator();
+                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
+                    addMessage(pixMsg2, 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
+
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000)); // Delay antes da terceira mensagem
+                    removeTypingIndicator();
+                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
+                    addMessage(pixMsg3, 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
+                    
+                    // Mostra o botão personalizado para upload do comprovante
+                    addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                        chatInputArea.style.display = 'none'; // Esconde a área de input de texto
+                        pixUploadArea.style.display = 'flex'; // Mostra a área de upload
+                        waitingForComprovante = true; // Ativa o estado de espera por comprovante
+                        adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
+                        initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                    });
+
                     return; // Encerra a função aqui para não processar a resposta da IA
                 }
             }
@@ -812,34 +792,6 @@
             }
         }
 
-        /**
-         * @function extractTextFromPDF
-         * @description Extrai texto de um arquivo PDF para validação
-         * @param {ArrayBuffer} pdfData - Dados do PDF em ArrayBuffer
-         */
-        async function extractTextFromPDF(pdfData) {
-            try {
-                const loadingTask = pdfjsLib.getDocument({data: pdfData});
-                const pdf = await loadingTask.promise;
-                let fullText = '';
-                
-                // Limita a extração às primeiras 3 páginas para performance
-                const numPages = Math.min(pdf.numPages, 3);
-                
-                for (let i = 1; i <= numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const strings = textContent.items.map(item => item.str);
-                    fullText += strings.join(' ') + '\n';
-                }
-                
-                return fullText;
-            } catch (error) {
-                console.error('Erro ao extrair texto do PDF:', error);
-                return null;
-            }
-        }
-
         // Lidar com a seleção do arquivo de comprovante e pré-visualização, e iniciar OCR
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -851,7 +803,7 @@
             }
 
             const reader = new FileReader();
-            let fileDataForOCR;
+            let fileDataForOCR = null; // Initialize as null
 
             // Lógica para adicionar a pré-visualização do comprovante no chat como uma mensagem do usuário
             if (file.type.startsWith('image/')) {
@@ -865,22 +817,76 @@
                 reader.readAsDataURL(file);
             } else if (file.type === 'application/pdf') {
                 reader.onload = async (e) => {
-                    await addMessage('', 'user', false, '', true, e.target.result);
+                    const pdfData = e.target.result;
+                    await addMessage('', 'user', false, '', true, pdfData); // Add PDF preview to chat bubble
+
                     receiptPreview.style.display = 'none';
-                    pdfPreviewCanvas.style.display = 'block';
-                    fileDataForOCR = e.target.result;
+                    pdfPreviewCanvas.style.display = 'block'; // Ensure the OCR canvas is visible (even if off-screen)
+
+                    try {
+                        const loadingTask = pdfjsLib.getDocument({data: pdfData});
+                        const pdf = await loadingTask.promise;
+                        const page = await pdf.getPage(1); // Get the first page
+
+                        // Clear the canvas before drawing a new PDF
+                        const ctx = pdfPreviewCanvas.getContext('2d');
+                        ctx.clearRect(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
+
+                        // Use a higher scale for OCR accuracy
+                        const viewport = page.getViewport({ scale: 3.0 }); // Increased scale for better OCR
+                        pdfPreviewCanvas.height = viewport.height;
+                        pdfPreviewCanvas.width = viewport.width;
+
+                        const renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        await page.render(renderContext).promise;
+
+                        fileDataForOCR = pdfPreviewCanvas; // Pass the canvas element for OCR
+                    } catch (pdfError) {
+                        console.error('Erro ao renderizar PDF para OCR:', pdfError);
+                        ocrStatusMessage.textContent = 'Erro ao carregar PDF para validação.';
+                        fileDataForOCR = null; // Ensure no invalid data is passed to Tesseract
+                        removeTypingIndicator();
+                        addMessage("Não consegui processar o comprovante em PDF, amor. Pode me mandar um PDF mais simples ou uma foto? 💋", 'suellen');
+                        // Re-enable buttons and hide upload area
+                        uploadPhotoButton.disabled = false;
+                        uploadPdfButton.disabled = false;
+                        receiptFileInput.value = '';
+                        pixUploadArea.style.display = 'none';
+                        chatInputArea.style.display = 'flex';
+                        adjustChatMessagesPadding();
+                        return; // Exit early if PDF rendering fails
+                    }
                 };
                 reader.readAsArrayBuffer(file);
             }
 
-            await new Promise(resolve => reader.onloadend = resolve);
+            await new Promise(resolve => reader.onloadend = resolve); // Wait for file to be read
+
+            // If PDF rendering failed or no file data, stop processing and inform user
+            if (!fileDataForOCR) {
+                return; // Already handled error message and UI reset in PDF rendering catch block
+            }
             
             addTypingIndicator();
 
             if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
+                ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
                 await initializeTesseractWorker();
-                if (!tesseractWorker) return;
+                if (!tesseractWorker) {
+                    removeTypingIndicator();
+                    addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
+                    // Re-enable buttons and hide upload area
+                    uploadPhotoButton.disabled = false;
+                    uploadPdfButton.disabled = false;
+                    receiptFileInput.value = '';
+                    pixUploadArea.style.display = 'none';
+                    chatInputArea.style.display = 'flex';
+                    adjustChatMessagesPadding();
+                    return;
+                }
             }
 
             ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
@@ -888,46 +894,48 @@
             uploadPdfButton.disabled = true;
 
             try {
-                let extractedText = '';
-                
-                if (file.type.startsWith('image/')) {
-                    // Processamento de imagem com Tesseract
-                    const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
-                    extractedText = text;
-                } else if (file.type === 'application/pdf') {
-                    // Processamento de PDF com pdf.js
-                    extractedText = await extractTextFromPDF(fileDataForOCR);
-                    if (!extractedText) {
-                        throw new Error('Não foi possível extrair texto do PDF');
-                    }
-                }
-                
-                console.log('Texto extraído do comprovante:', extractedText);
+                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
+                console.log('Texto extraído do comprovante:', text);
                 
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 removeTypingIndicator();
-                handleComprovante(extractedText);
+                handleComprovante(text);
             } catch (error) {
                 console.error('Erro no processamento do comprovante:', error);
-                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara ou PDF legível.';
-                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara ou PDF legível? 💋", 'suellen');
-                
-                // Mostra novamente o botão para enviar comprovante
-                addCustomActionButton('Enviar Comprovante Novamente', () => {
-                    chatInputArea.style.display = 'none';
-                    pixUploadArea.style.display = 'flex';
-                    waitingForComprovante = true;
-                    adjustChatMessagesPadding();
-                });
+                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
+                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
             } finally {
                 uploadPhotoButton.disabled = false;
                 uploadPdfButton.disabled = false;
                 receiptFileInput.value = '';
                 
+                // Return to main chat view
                 pixUploadArea.style.display = 'none';
                 chatInputArea.style.display = 'flex';
                 adjustChatMessagesPadding();
             }
+        });
+
+        // Event listeners para os botões de upload
+        uploadPhotoButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*';
+            receiptFileInput.click();
+        });
+
+        uploadPdfButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'application/pdf';
+            receiptFileInput.click();
+        });
+
+        // Event listeners para os botões de anexo
+        attachButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*,application/pdf';
+            receiptFileInput.click();
+        });
+
+        sendPhotoButton.addEventListener('click', () => {
+            receiptFileInput.accept = 'image/*';
+            receiptFileInput.click();
         });
 
         /**
@@ -936,17 +944,6 @@
          * @param {string} extractedText - O texto extraído do comprovante via OCR.
          */
         function handleComprovante(extractedText) {
-            if (!extractedText) {
-                addMessage("Não consegui ler o comprovante, amor. Pode me mandar novamente? 💋", 'suellen');
-                addCustomActionButton('Enviar Comprovante Novamente', () => {
-                    chatInputArea.style.display = 'none';
-                    pixUploadArea.style.display = 'flex';
-                    waitingForComprovante = true;
-                    adjustChatMessagesPadding();
-                });
-                return;
-            }
-
             const normalizedText = extractedText.toLowerCase()
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/[^a-z0-9\s.,]/g, "");
@@ -978,17 +975,18 @@
                 sendPhotosWithDelay(expectedPaymentAmount);
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
+                // Modified error message: more affectionate and generic
                 let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
                 
                 addMessage(errorMessage, 'suellen');
-                ocrStatusMessage.textContent = 'Validação falhou. Verifique o valor e o nome.';
-                
-                // Mostra novamente o botão para enviar comprovante
-                addCustomActionButton('Enviar Comprovante Novamente', () => {
-                    chatInputArea.style.display = 'none';
-                    pixUploadArea.style.display = 'flex';
-                    waitingForComprovante = true;
-                    adjustChatMessagesPadding();
+                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
+                // Always show the custom action button to re-upload
+                addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                    chatInputArea.style.display = 'none'; // Esconde a área de input de texto
+                    pixUploadArea.style.display = 'flex'; // Mostra a área de upload
+                    waitingForComprovante = true; // Ativa o estado de espera por comprovante
+                    adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
+                    initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
                 });
             }
         }
@@ -1038,28 +1036,6 @@
                 }
             }
         }
-
-        // Event listeners para os botões de upload
-        uploadPhotoButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*';
-            receiptFileInput.click();
-        });
-
-        uploadPdfButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'application/pdf';
-            receiptFileInput.click();
-        });
-
-        // Event listeners para os botões de anexo
-        attachButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*,application/pdf';
-            receiptFileInput.click();
-        });
-
-        sendPhotoButton.addEventListener('click', () => {
-            receiptFileInput.accept = 'image/*';
-            receiptFileInput.click();
-        });
 
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
