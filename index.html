@@ -6,23 +6,26 @@
     <title>Suellen Rocha - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Define as variáveis de cores e fontes para fácil manutenção */
         :root {
-            --bg-dark: #28004D;
-            --bg-medium: #4A0080;
-            --accent-pink: #FF69B4;
-            --accent-red: #FF007F;
+            --bg-dark: #28004D; /* Um roxo bem escuro */
+            --bg-medium: #4A0080; /* Um roxo médio para o chat */
+            --accent-pink: #FF69B4; /* Rosa vibrante */
+            --accent-red: #FF007F; /* Vermelho vibrante */
             --text-light: #F0F0F0;
             --text-dark: #333333;
-            --bubble-user: #FF69B4;
-            --bubble-suellen: #FFFFFF;
+            --bubble-user: #FF69B4; /* Cor da bolha do usuário */
+            --bubble-suellen: #FFFFFF; /* Cor da bolha da Suellen */
         }
 
+        /* Aplica box-sizing para um modelo de caixa mais previsível */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
+        /* Estilos globais para o corpo da página */
         html, body {
             height: 100%;
             width: 100%;
@@ -35,6 +38,7 @@
             align-items: center;
         }
 
+        /* Contêiner principal do chat */
         .chat-container {
             width: 100%;
             height: 100vh;
@@ -49,6 +53,7 @@
             overflow: hidden;
         }
 
+        /* Cabeçalho do chat */
         .chat-header {
             display: flex;
             align-items: center;
@@ -59,6 +64,7 @@
             flex-shrink: 0;
         }
 
+        /* Imagem de perfil no cabeçalho */
         .profile-pic {
             width: 50px;
             height: 50px;
@@ -68,6 +74,7 @@
             margin-right: 15px;
         }
 
+        /* Informações do cabeçalho */
         .header-info h2 {
             margin: 0;
             font-size: 1.2em;
@@ -81,6 +88,7 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Área de mensagens */
         .chat-messages {
             flex-grow: 1;
             min-height: 0;
@@ -92,6 +100,7 @@
             scroll-behavior: smooth;
         }
 
+        /* Bolhas de mensagem */
         .message-bubble {
             max-width: 80%;
             padding: 12px 18px;
@@ -122,6 +131,7 @@
             margin-top: 5px;
         }
 
+        /* Indicador de digitação */
         .message-bubble.typing-indicator-bubble {
             background-color: var(--bubble-suellen);
             color: var(--text-dark);
@@ -149,11 +159,13 @@
             animation: bounce 1.4s infinite ease-in-out both;
         }
 
+        /* Animação dos pontos */
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
 
+        /* Área de input */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
@@ -168,6 +180,7 @@
             flex-shrink: 0;
         }
 
+        /* Campo de input */
         .chat-input {
             flex-grow: 1;
             padding: 12px 18px;
@@ -184,6 +197,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
+        /* Botão de envio */
         .send-button {
             background-color: var(--accent-pink);
             color: var(--text-light);
@@ -204,6 +218,7 @@
             background-color: var(--accent-red);
         }
 
+        /* Área de upload de PIX */
         .pix-upload-area {
             display: none;
             flex-direction: column;
@@ -244,10 +259,12 @@
             object-fit: contain;
         }
 
+        /* Esconde o input de arquivo padrão */
         #receipt-file-input {
             display: none;
         }
 
+        /* Botões de upload */
         .pix-upload-area .upload-type-button {
             width: 100%;
             border-radius: 25px;
@@ -275,6 +292,7 @@
             margin-top: 5px;
         }
 
+        /* Botão de ação personalizado */
         .custom-action-button {
             background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
             color: var(--text-light);
@@ -295,6 +313,7 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
         }
 
+        /* Botões de anexo */
         .attachment-buttons {
             position: absolute;
             right: 85px;
@@ -318,6 +337,7 @@
             object-fit: contain;
         }
 
+        /* Responsividade */
         @media (max-width: 600px) {
             .chat-container {
                 border-radius: 0;
@@ -339,8 +359,11 @@
             </div>
         </div>
 
-        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Mensagens serão inseridas aqui -->
+        </div>
 
+        <!-- Área de upload de comprovante PIX -->
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
                 <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
@@ -377,12 +400,14 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        // Elementos do DOM
+        const chatContainer = document.querySelector('.chat-container');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
         const statusText = document.getElementById('status-text');
         const chatInputArea = document.getElementById('chat-input-area');
+        const chatHeader = document.querySelector('.chat-header');
+
         const pixUploadArea = document.getElementById('pix-upload-area');
         const receiptFileInput = document.getElementById('receipt-file-input');
         const receiptPreview = document.getElementById('receipt-preview');
@@ -393,31 +418,31 @@
         const attachButton = document.getElementById('attach-button');
         const sendPhotoButton = document.getElementById('send-photo-button');
 
-        // Variáveis de estado
         let chatHistory = [];
+        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
         let photosSentCount = 0;
         let expectedPaymentAmount = 0;
+        let waitingForComprovante = false;
         let typingIndicatorElement = null;
         let customActionButton = null;
         let tesseractWorker = null;
 
-        // Valores válidos para comprovantes
-        const VALID_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
-        const VALID_NAMES = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-
-        // Funções auxiliares
         function adjustChatContainerHeight() {
-            document.querySelector('.chat-container').style.height = `${window.innerHeight}px`;
+            chatContainer.style.height = `${window.innerHeight}px`;
             adjustChatMessagesPadding();
         }
 
         function adjustChatMessagesPadding() {
-            const headerHeight = document.querySelector('.chat-header').offsetHeight;
+            const headerHeight = chatHeader.offsetHeight;
             const inputAreaHeight = chatInputArea.offsetHeight;
+
             let currentBottomPadding = inputAreaHeight + 20;
 
             if (pixUploadArea.style.display === 'flex') {
-                currentBottomPadding += pixUploadArea.offsetHeight;
+                const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
+                currentBottomPadding += pixAreaVisibleHeight;
                 pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
                 pixUploadArea.style.bottom = `0px`;
@@ -440,7 +465,6 @@
             }
         }
 
-        // Funções principais
         async function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false, pdfFile = null) {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', sender);
@@ -461,6 +485,7 @@
                     const pdf = await loadingTask.promise;
                     const page = await pdf.getPage(1);
                     const viewport = page.getViewport({ scale: 1.0 });
+
                     const maxWidth = chatMessages.offsetWidth * 0.7;
                     const scale = maxWidth / viewport.width;
                     const scaledViewport = page.getViewport({ scale: scale });
@@ -550,17 +575,12 @@
             chatHistory.push({ role: "user", parts: [{ text: message }] });
             removeCustomActionButton();
 
-            // Verifica se é uma solicitação de fotos
-            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || 
-                                message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
-            
+            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
             let requestedQuantity = 0;
 
             if (quantityMatch) {
                 const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase();
-                
-                // Converte texto para número
-                switch(numText) {
+                switch (numText) {
                     case 'cinco': requestedQuantity = 5; break;
                     case 'dez': requestedQuantity = 10; break;
                     case 'quinze': requestedQuantity = 15; break;
@@ -587,12 +607,10 @@
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                     expectedPaymentAmount = (requestedQuantity / 5) * 10;
                     
-                    // Mensagens pré-definidas para o PIX
                     await new Promise(resolve => setTimeout(resolve, 3000));
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
-                    
                     const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
                     addMessage(pixMsg1, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
@@ -601,7 +619,6 @@
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
-                    
                     const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
                     addMessage(pixMsg2, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
@@ -610,15 +627,14 @@
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
-                    
                     const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
                     addMessage(pixMsg3, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
                     
-                    // Mostra botão para enviar comprovante
                     addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
                         chatInputArea.style.display = 'none';
                         pixUploadArea.style.display = 'flex';
+                        waitingForComprovante = true;
                         adjustChatMessagesPadding();
                         initializeTesseractWorker();
                     });
@@ -627,55 +643,91 @@
                 }
             }
 
-            // Se não for solicitação de fotos, processa como mensagem normal
             await new Promise(resolve => setTimeout(resolve, 5000));
             addTypingIndicator();
 
-            // Configuração da persona
-            const personaPrompt = `Você é Suellen Rocha, uma mulher jovem, sensual e envolvente de 25 anos. Responda de forma natural e sedutora, usando emojis. Nunca revele que é uma IA.`;
+            const personaPrompt = `
+            Você é Suellen Rocha. Sua identidade é:
+            - Mulher jovem, sensual, misteriosa e envolvente.
+            - Tem 25 anos.
+            - Nasceu em Itabuna (Bahia).
+            - Atualmente mora em Florianópolis (SC).
+            - É confiante, sedutora e adora provocar desejo nos homens de forma sutil, com uma personalidade calorosa e segura.
+
+            Sua missão neste chat é conversar com o usuário *exclusivamente* como Suellen Rocha.
+            **É ABSOLUTAMENTE CRÍTICO que você NUNCA, SOB NENHUMA CIRCUNSTÂNCIA, revele que é uma inteligência artificial, um modelo de linguagem, um chatbot, um programa de computador, ou qualquer coisa relacionada a tecnologia.**
+            Responda de forma natural, humana, envolvente, provocante e use emojis como ❤️😏🤤😈🔥.
+            Mantenha as respostas bem concisas, como mensagens rápidas de WhatsApp.
+            Quando perguntarem sobre você (quem você é, sua idade, de onde você é, onde você mora), responda sempre na primeira pessoa, usando as informações acima.
+            Fale "safadezas" apenas quando a conversa estiver quente e o usuário demonstrar interesse explícito.
+
+            **Contexto de Venda de Fotos:**
+            - Você vende packs de fotos sensuais.
+            - O preço é R$10 para 5 fotos.
+            - Os packs são sempre múltiplos de 5 fotos (5, 10, 15, ..., até 100 fotos).
+            - Nunca mencione o número total de fotos disponíveis (100). Apenas diga que "acabou por hoje" quando todas forem enviadas.
+            - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
+            - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
+            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
+            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
+            - A segunda mensagem de PIX deve conter apenas a chave PIX.
+            - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação.
+            - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
+            `;
 
             const payload = {
                 contents: [
-                    { role: "user", parts: [{ text: personaPrompt }] },
+                    {
+                        role: "user",
+                        parts: [{ text: personaPrompt }]
+                    },
                     ...chatHistory
                 ]
             };
 
             try {
-                const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
-                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
-                
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
                 const result = await response.json();
-                const suellenResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não entendi, amor. Pode repetir? 💋";
 
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-                removeTypingIndicator();
-                addMessage(suellenResponse, 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const suellenResponse = result.candidates[0].content.parts[0].text;
 
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
+                    removeTypingIndicator();
+                    addMessage(suellenResponse, 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+
+                } else {
+                    removeTypingIndicator();
+                    addMessage("Desculpe, não entendi, amor. Pode repetir? 💋", 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: "Desculpe, não entendi, amor. Pode repetir? 💋" }] });
+                }
             } catch (error) {
-                console.error("Erro ao chamar a API:", error);
+                console.error("Erro ao chamar a API Gemini:", error);
                 removeTypingIndicator();
-                addMessage("Ops! Deu um probleminha aqui. Tenta de novo em um minutinho, tá? 😉", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui. Tenta de novo em um minutinho, tá? 😉" }] });
+                addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉" }] });
             }
         }
 
-        // Processamento do comprovante PIX
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
-            if (!file) return;
+            if (!file) {
+                receiptPreview.style.display = 'none';
+                pdfPreviewCanvas.style.display = 'none';
+                ocrStatusMessage.textContent = '';
+                return;
+            }
 
             const reader = new FileReader();
             let fileDataForOCR = null;
 
-            // Pré-visualização do arquivo
             if (file.type.startsWith('image/')) {
                 reader.onload = async (e) => {
                     await addMessage('', 'user', true, e.target.result);
@@ -685,8 +737,7 @@
                     fileDataForOCR = e.target.result;
                 };
                 reader.readAsDataURL(file);
-            } 
-            else if (file.type === 'application/pdf') {
+            } else if (file.type === 'application/pdf') {
                 reader.onload = async (e) => {
                     const pdfData = e.target.result;
                     await addMessage('', 'user', false, '', true, pdfData);
@@ -698,24 +749,36 @@
                         const loadingTask = pdfjsLib.getDocument({data: pdfData});
                         const pdf = await loadingTask.promise;
                         const page = await pdf.getPage(1);
-                        
-                        // Renderiza em alta qualidade para melhor OCR
+
+                        const ctx = pdfPreviewCanvas.getContext('2d');
+                        ctx.clearRect(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
+
                         const viewport = page.getViewport({ scale: 3.0 });
                         pdfPreviewCanvas.height = viewport.height;
                         pdfPreviewCanvas.width = viewport.width;
 
                         const renderContext = {
-                            canvasContext: pdfPreviewCanvas.getContext('2d'),
+                            canvasContext: ctx,
                             viewport: viewport
                         };
                         await page.render(renderContext).promise;
+
                         await new Promise(resolve => setTimeout(resolve, 1000));
 
-                        // Prepara os dados para OCR
-                        fileDataForOCR = pdfPreviewCanvas.toDataURL('image/png');
-                    } catch (error) {
-                        console.error('Erro ao renderizar PDF:', error);
-                        ocrStatusMessage.textContent = 'Erro ao processar PDF';
+                        const imageData = ctx.getImageData(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
+                        fileDataForOCR = imageData;
+                    } catch (pdfError) {
+                        console.error('Erro ao renderizar PDF para OCR:', pdfError);
+                        ocrStatusMessage.textContent = 'Erro ao carregar PDF para validação.';
+                        fileDataForOCR = null;
+                        removeTypingIndicator();
+                        addMessage("Não consegui processar o comprovante em PDF, amor. Pode me mandar um PDF mais simples ou uma foto? 💋", 'suellen');
+                        uploadPhotoButton.disabled = false;
+                        uploadPdfButton.disabled = false;
+                        receiptFileInput.value = '';
+                        pixUploadArea.style.display = 'none';
+                        chatInputArea.style.display = 'flex';
+                        adjustChatMessagesPadding();
                         return;
                     }
                 };
@@ -723,134 +786,61 @@
             }
 
             await new Promise(resolve => reader.onloadend = resolve);
-            if (!fileDataForOCR) return;
 
-            // Processamento OCR
+            if (!fileDataForOCR) {
+                return;
+            }
+            
             addTypingIndicator();
-            ocrStatusMessage.textContent = 'Validando pagamento...';
+
+            if (!tesseractWorker) {
+                ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
+                await initializeTesseractWorker();
+                if (!tesseractWorker) {
+                    removeTypingIndicator();
+                    addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
+                    uploadPhotoButton.disabled = false;
+                    uploadPdfButton.disabled = false;
+                    receiptFileInput.value = '';
+                    pixUploadArea.style.display = 'none';
+                    chatInputArea.style.display = 'flex';
+                    adjustChatMessagesPadding();
+                    return;
+                }
+            }
+
+            ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
             uploadPhotoButton.disabled = true;
             uploadPdfButton.disabled = true;
 
             try {
-                if (!tesseractWorker) {
-                    await initializeTesseractWorker();
-                    if (!tesseractWorker) throw new Error('OCR não carregado');
+                let result;
+                if (file.type.startsWith('image/')) {
+                    result = await tesseractWorker.recognize(fileDataForOCR);
+                } else if (file.type === 'application/pdf') {
+                    result = await tesseractWorker.recognize(fileDataForOCR);
                 }
-
-                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
-                console.log('Texto extraído:', text);
+                
+                console.log('DEBUG - Extracted Text:', result.data.text);
                 
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 removeTypingIndicator();
-                
-                // Valida o comprovante
-                validateReceipt(text);
+                handleComprovante(result.data.text);
             } catch (error) {
-                console.error('Erro no OCR:', error);
-                removeTypingIndicator();
-                ocrStatusMessage.textContent = 'Erro ao validar comprovante';
-                addMessage("Não consegui ler o comprovante, amor. Pode enviar novamente? 💋", 'suellen');
+                console.error('Erro no processamento do comprovante:', error);
+                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
+                addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
             } finally {
                 uploadPhotoButton.disabled = false;
                 uploadPdfButton.disabled = false;
                 receiptFileInput.value = '';
+                
                 pixUploadArea.style.display = 'none';
                 chatInputArea.style.display = 'flex';
                 adjustChatMessagesPadding();
             }
         });
 
-        function validateReceipt(text) {
-            const normalizedText = text.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9\s.,]/g, "");
-
-            console.log('Texto normalizado:', normalizedText);
-
-            // Verifica se contém um dos nomes autorizados
-            const hasValidName = VALID_NAMES.some(name => normalizedText.includes(name));
-            
-            // Extrai todos os valores monetários
-            const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
-            let extractedAmount = 0;
-            let match;
-            
-            while ((match = amountPattern.exec(normalizedText)) !== null) {
-                const amountStr = match[1].replace(',', '.');
-                const currentAmount = parseFloat(amountStr);
-                if (currentAmount > extractedAmount) {
-                    extractedAmount = currentAmount;
-                }
-            }
-
-            extractedAmount = Math.round(extractedAmount * 100) / 100;
-            
-            // Verifica se o valor é um dos válidos
-            const isValidAmount = VALID_VALUES.includes(extractedAmount);
-            
-            console.log('Valor extraído:', extractedAmount, 'Valor esperado:', expectedPaymentAmount);
-            console.log('Nome válido:', hasValidName, 'Valor válido:', isValidAmount);
-
-            if (hasValidName && isValidAmount) {
-                // Comprovante válido
-                addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
-                ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
-                
-                // Calcula quantas fotos enviar (R$10 para cada 5 fotos)
-                const numPhotos = (extractedAmount / 10) * 5;
-                sendPhotos(numPhotos);
-            } else {
-                // Comprovante inválido
-                let errorMsg = "Hmm, não consegui validar seu comprovante...";
-                
-                if (!hasValidName) {
-                    errorMsg += "\nNão encontrei seu nome no comprovante.";
-                }
-                if (!isValidAmount) {
-                    errorMsg += `\nO valor R$${extractedAmount.toFixed(2)} não corresponde a nenhum pacote.`;
-                }
-                
-                addMessage(errorMsg + "\nPode enviar novamente? 💋", 'suellen');
-                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
-                
-                // Mostra novamente o botão para reenviar comprovante
-                addCustomActionButton('Enviar Comprovante Novamente', () => {
-                    chatInputArea.style.display = 'none';
-                    pixUploadArea.style.display = 'flex';
-                    adjustChatMessagesPadding();
-                });
-            }
-        }
-
-        async function sendPhotos(numPhotos) {
-            const photosToSend = Math.min(numPhotos, 100 - photosSentCount);
-            
-            if (photosToSend <= 0) {
-                addMessage("Já enviei todas as fotos disponíveis por hoje, amor. Volte amanhã! 😘", 'suellen');
-                return;
-            }
-
-            for (let i = 0; i < photosToSend; i++) {
-                photosSentCount++;
-                
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-                removeTypingIndicator();
-                
-                // Envia a foto (substitua pelo caminho real das suas fotos)
-                addMessage('', 'suellen', true, `foto${photosSentCount}.webp`);
-                
-                if (i < photosToSend - 1) {
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                }
-            }
-
-            if (photosSentCount >= 100) {
-                addMessage("Acabou por hoje, meu bem! Espero que tenha gostado... Volte mais tarde! 😈", 'suellen');
-            }
-        }
-
-        // Event listeners
         uploadPhotoButton.addEventListener('click', () => {
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
@@ -871,6 +861,108 @@
             receiptFileInput.click();
         });
 
+        function handleComprovante(extractedText) {
+            const normalizedText = extractedText.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9\s.,]/g, "");
+
+            console.log('DEBUG - Normalized Text:', normalizedText);
+
+            const pixKeyFound = normalizedText.includes('98981420070') || 
+                               normalizedText.includes('98981420070') ||
+                               normalizedText.includes('antonio') || 
+                               normalizedText.includes('renimar') || 
+                               normalizedText.includes('pinheiro') || 
+                               normalizedText.includes('almeida');
+
+            const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
+            let extractedAmount = 0;
+            let match;
+            
+            while ((match = amountPattern.exec(normalizedText)) !== null) {
+                const amountStr = match[1].replace(',', '.');
+                const currentAmount = parseFloat(amountStr);
+                if (currentAmount > extractedAmount) {
+                    extractedAmount = currentAmount;
+                }
+            }
+
+            extractedAmount = Math.round(extractedAmount * 100) / 100;
+            expectedPaymentAmount = Math.round(expectedPaymentAmount * 100) / 100;
+
+            const isAmountValid = Math.abs(extractedAmount - expectedPaymentAmount) <= (expectedPaymentAmount * 0.1);
+            
+            console.log('DEBUG - Extracted Amount:', extractedAmount);
+            console.log('DEBUG - Expected Amount:', expectedPaymentAmount);
+            console.log('DEBUG - PIX Key or Name Found:', pixKeyFound);
+            console.log('DEBUG - Is Amount Valid:', isAmountValid);
+
+            if ((isAmountValid || pixKeyFound) && extractedAmount > 0) {
+                addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
+                sendPhotosWithDelay(expectedPaymentAmount);
+                ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
+            } else {
+                let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
+                
+                if (extractedAmount > 0 && extractedAmount !== expectedPaymentAmount) {
+                    errorMessage = `Amor, o valor no comprovante (R$${extractedAmount.toFixed(2).replace('.', ',')}) não bate com o combinado (R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}). Pode verificar? 💋`;
+                } else if (extractedAmount <= 0) {
+                    errorMessage = "Não consegui identificar o valor no comprovante, amor. Pode me enviar uma imagem mais nítida? 💋";
+                }
+                
+                addMessage(errorMessage, 'suellen');
+                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
+                addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                    chatInputArea.style.display = 'none';
+                    pixUploadArea.style.display = 'flex';
+                    waitingForComprovante = true;
+                    adjustChatMessagesPadding();
+                    initializeTesseractWorker();
+                });
+            }
+        }
+
+        async function sendPhotosWithDelay(amountPaid) {
+            const numPhotos = (amountPaid / 10) * 5;
+            const photosToSendThisBatch = Math.min(numPhotos, 100 - photosSentCount);
+
+            if (photosToSendThisBatch > 0) {
+                for (let i = 0; i < photosToSendThisBatch; i++) {
+                    photosSentCount++;
+                    const imageUrl = `foto${photosSentCount}.webp`;
+                    
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+                    removeTypingIndicator();
+                    
+                    addMessage('', 'suellen', true, imageUrl);
+                    
+                    if (i < photosToSendThisBatch - 1) {
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    }
+                }
+                
+                if (photosSentCount >= 100) {
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    removeTypingIndicator();
+                    addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
+                }
+            } else {
+                if (photosSentCount >= 100) {
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    removeTypingIndicator();
+                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
+                } else {
+                    addTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    removeTypingIndicator();
+                    addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
+                }
+            }
+        }
+
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
             if (message) {
@@ -885,16 +977,20 @@
             }
         });
 
-        // Inicialização
         window.onload = () => {
             adjustChatContainerHeight();
+
             window.addEventListener('resize', adjustChatContainerHeight);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
+            }
             
             setTimeout(() => {
                 addTypingIndicator();
                 setTimeout(() => {
                     removeTypingIndicator();
                     addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
                 }, Math.random() * 4000 + 3000)); 
             }, 4000); 
         };
