@@ -352,7 +352,7 @@
                 <canvas id="pdf-preview-canvas" style="display: none;"></canvas>
             </div>
             <p id="ocr-status-message" class="status-message"></p>
-            <input type="file" id="receipt-file-input">
+            <input type="file" id="receipt-file-input" accept="image/*,application/pdf">
             <button id="upload-photo-button" class="upload-type-button">
                 Enviar Comprovante (Foto)
             </button>
@@ -365,10 +365,10 @@
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
             <div class="attachment-buttons">
                 <button class="attachment-button" id="attach-button">
-                    <img src="anexar.webp" alt="Anexar">
+                    <img src="anexar.webp" alt="Anexar" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wYXBlcmNsaXAiPjxwYXRoIGQ9Ik0xNSA3aDNhMiAyIDAgMCAxIDIgMnY5YTIgMiAwIDAgMS0yIDJINGEyIDIgMCAwIDEtMi0yVjVhMiAyIDAgMCAxIDItMmg3Ii8+PHBhdGggZD0iTTkgMTVWM0g1YTIgMiAwIDAgMC0yIDJ2MTRhMiAyIDAgMCAwIDIgMmgxNGEyIDIgMCAwIDAgMi0ydi0xMCIvPjwvc3ZnPg=='">
                 </button>
                 <button class="attachment-button" id="send-photo-button">
-                    <img src="enviarfoto.webp" alt="Enviar Foto">
+                    <img src="enviarfoto.webp" alt="Enviar Foto" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jYW1lcmEiPjxwYXRoIGQ9Ik0xNCA4aC4wMSIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxNiIgeD0iMiIgeT0iNCIgcng9IjIiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSIyIi8+PC9zdmc+'">
                 </button>
             </div>
             <button id="send-button" class="send-button">
@@ -420,6 +420,9 @@
         };
 
         const validNames = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+
+        // Sample photo URLs - replace with your actual photo URLs
+        const samplePhotos = Array.from({length: 100}, (_, i) => `https://placehold.co/600x800/FF69B4/FFFFFF?text=Foto+${i+1}`);
 
         // Adjust chat container height for mobile
         function adjustChatContainerHeight() {
@@ -475,6 +478,9 @@
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = `Foto de Suellen ${photosSentCount}`;
+                img.onerror = function() {
+                    this.src = 'https://placehold.co/600x800/FF69B4/FFFFFF?text=Foto+Indispon%C3%ADvel';
+                };
                 messageBubble.appendChild(img);
             } else if (isPdfPreview && pdfFile) {
                 const canvas = document.createElement('canvas');
@@ -483,7 +489,9 @@
                 messageBubble.appendChild(canvas);
 
                 try {
-                    const loadingTask = pdfjsLib.getDocument({data: pdfFile});
+                    // Create a copy of the ArrayBuffer to prevent detachment issues
+                    const arrayBufferCopy = pdfFile.slice(0);
+                    const loadingTask = pdfjsLib.getDocument({data: arrayBufferCopy});
                     const pdf = await loadingTask.promise;
                     const page = await pdf.getPage(1);
                     const viewport = page.getViewport({ scale: 1.0 });
@@ -678,7 +686,6 @@
 
         // Generate AI response
         async function generateAIResponse() {
-            await delay(5000);
             showTypingIndicator();
 
             const personaPrompt = `
@@ -812,7 +819,9 @@
                 receiptPreview.style.display = 'none';
                 
                 try {
-                    const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+                    // Create a copy of the ArrayBuffer to prevent detachment issues
+                    const arrayBufferCopy = arrayBuffer.slice(0);
+                    const loadingTask = pdfjsLib.getDocument({data: arrayBufferCopy});
                     const pdf = await loadingTask.promise;
                     const page = await pdf.getPage(1);
                     
@@ -907,7 +916,7 @@
             if (photosToSend > 0) {
                 for (let i = 0; i < photosToSend; i++) {
                     photosSentCount++;
-                    const imageUrl = `foto${photosSentCount}.webp`;
+                    const imageUrl = samplePhotos[photosSentCount - 1] || `https://placehold.co/600x800/FF69B4/FFFFFF?text=Foto+${photosSentCount}`;
                     
                     showTypingIndicator();
                     await delay(Math.random() * 1000 + 500);
@@ -1012,8 +1021,8 @@
                 return delay(Math.random() * 4000 + 3000);
             }).then(() => {
                 hideTypingIndicator();
-                addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
+                addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui...🙈" }] });
             });
         });
     </script>
