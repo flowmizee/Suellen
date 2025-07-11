@@ -402,7 +402,7 @@
 
         // Chat state variables
         let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
+        const API_KEY = "";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
@@ -634,12 +634,13 @@
             await generateAIResponse();
         }
 
-        // Send payment instructions
+        // Send payment instructions with the 3 predefined messages
         async function sendPaymentInstructions(quantity) {
             showTypingIndicator();
             await delay(Math.random() * 2000 + 1000);
             hideTypingIndicator();
             
+            // First message - customized with quantity and price
             const pixMsg1 = `Perfeito! 🔥 Para ${quantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
             addMessage(pixMsg1, 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
@@ -648,6 +649,7 @@
             await delay(Math.random() * 2000 + 1000);
             hideTypingIndicator();
             
+            // Second message - fixed PIX key
             const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
             addMessage(pixMsg2, 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
@@ -656,7 +658,8 @@
             await delay(Math.random() * 2000 + 1000);
             hideTypingIndicator();
             
-            const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
+            // Third message - about the assistant
+            const pixMsg3 = `A chave está no nome do meu assessor. Faz o pagamento e envia comprovante aqui, que libero rapidinho, meu bem. 🙈`;
             addMessage(pixMsg3, 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
             
