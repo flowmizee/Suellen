@@ -588,6 +588,7 @@
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                     expectedPaymentAmount = (requestedQuantity / 5) * 10;
                     
+                    // Primeira mensagem personalizada
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                     removeTypingIndicator();
@@ -595,6 +596,7 @@
                     addMessage(pixMsg1, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
                     
+                    // Segunda mensagem personalizada
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                     removeTypingIndicator();
@@ -602,6 +604,7 @@
                     addMessage(pixMsg2, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
 
+                    // Terceira mensagem personalizada
                     addTypingIndicator();
                     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
                     removeTypingIndicator();
@@ -811,21 +814,14 @@
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/[^a-z0-9\s.,]/g, "");
 
-            const nameKeywords = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-            const fullName = 'antonio renimar pinheiro almeida';
-            const nameMatches = nameKeywords.some(keyword => normalizedText.includes(keyword)) || 
-                               normalizedText.includes(fullName);
-
-            const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
-            let extractedAmount = 0;
-            let match;
+            // Verifica se tem R$ antes do valor
+            const amountPattern = /(?:r\$\s*|rs\s*)(\d{1,3}(?:[.,]\d{2})?)/i;
+            const match = normalizedText.match(amountPattern);
             
-            while ((match = amountPattern.exec(normalizedText)) !== null) {
+            let extractedAmount = 0;
+            if (match) {
                 const amountStr = match[1].replace(',', '.');
-                const currentAmount = parseFloat(amountStr);
-                if (currentAmount > extractedAmount) {
-                    extractedAmount = currentAmount;
-                }
+                extractedAmount = parseFloat(amountStr);
             }
 
             extractedAmount = Math.round(extractedAmount * 100) / 100;
@@ -833,13 +829,13 @@
 
             const isAmountValid = Math.abs(extractedAmount - expectedPaymentAmount) < 0.01;
             
-            if ((isAmountValid || nameMatches) && (isAmountValid || extractedAmount > 0)) {
+            if (isAmountValid) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                 sendPhotosWithDelay(expectedPaymentAmount);
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
-                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?", 'suellen');
-                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
+                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o valor no comprovante pra mim, amor?", 'suellen');
+                ocrStatusMessage.textContent = 'Valor não corresponde ao esperado. Por favor, tente novamente.';
                 addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
                     chatInputArea.style.display = 'none';
                     pixUploadArea.style.display = 'flex';
