@@ -382,6 +382,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
+        // Initialize all DOM elements
         const chatContainer = document.querySelector('.chat-container');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
@@ -389,7 +390,6 @@
         const statusText = document.getElementById('status-text');
         const chatInputArea = document.getElementById('chat-input-area');
         const chatHeader = document.querySelector('.chat-header');
-
         const pixUploadArea = document.getElementById('pix-upload-area');
         const receiptFileInput = document.getElementById('receipt-file-input');
         const receiptPreview = document.getElementById('receipt-preview');
@@ -400,18 +400,18 @@
         const attachButton = document.getElementById('attach-button');
         const sendPhotoButton = document.getElementById('send-photo-button');
 
+        // Chat state variables
         let chatHistory = [];
         const API_KEY = "";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
         let expectedPaymentAmount = 0;
-        let waitingForComprovante = false;
         let typingIndicatorElement = null;
         let customActionButton = null;
         let tesseractWorker = null;
 
-        // Valid payment amounts and corresponding photo counts
+        // Payment configuration
         const validPaymentAmounts = {
             10: 5, 20: 10, 30: 15, 40: 20, 50: 25,
             60: 30, 70: 35, 80: 40, 90: 45, 100: 50,
@@ -419,45 +419,54 @@
             160: 80, 170: 85, 180: 90, 190: 95, 200: 100
         };
 
-        // Valid names to look for in the receipt
         const validNames = ['antonio', 'renimar', 'pinheiro', 'almeida'];
 
+        // Adjust chat container height for mobile
         function adjustChatContainerHeight() {
             chatContainer.style.height = `${window.innerHeight}px`;
             adjustChatMessagesPadding();
         }
 
+        // Adjust message padding based on input/upload areas
         function adjustChatMessagesPadding() {
             const headerHeight = chatHeader.offsetHeight;
             const inputAreaHeight = chatInputArea.offsetHeight;
-
             let currentBottomPadding = inputAreaHeight + 20;
 
             if (pixUploadArea.style.display === 'flex') {
-                const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
-                currentBottomPadding += pixAreaVisibleHeight;
+                const pixAreaHeight = pixUploadArea.offsetHeight;
+                currentBottomPadding += pixAreaHeight;
                 pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
                 pixUploadArea.style.bottom = `0px`;
             }
             
             chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
+            scrollToBottom();
+        }
+
+        // Scroll to bottom of chat
+        function scrollToBottom() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // Initialize Tesseract OCR worker
         async function initializeTesseractWorker() {
             if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
+                ocrStatusMessage.textContent = 'Preparando validador...';
                 try {
                     tesseractWorker = await Tesseract.createWorker('por');
                     ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
                 } catch (error) {
                     console.error('Erro ao carregar validador:', error);
                     ocrStatusMessage.textContent = 'Erro ao carregar validador. Tente novamente.';
+                    throw error;
                 }
             }
+            return tesseractWorker;
         }
 
+        // Add message to chat
         async function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false, pdfFile = null) {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', sender);
@@ -512,10 +521,10 @@
 
             chatMessages.appendChild(messageBubble);
             adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function addTypingIndicator() {
+        // Show typing indicator
+        function showTypingIndicator() {
             if (typingIndicatorElement) return;
 
             typingIndicatorElement = document.createElement('div');
@@ -528,12 +537,12 @@
                 </div>
             `;
             chatMessages.appendChild(typingIndicatorElement);
-            adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
             statusText.textContent = 'digitando...';
+            adjustChatMessagesPadding();
         }
 
-        function removeTypingIndicator() {
+        // Hide typing indicator
+        function hideTypingIndicator() {
             if (typingIndicatorElement) {
                 typingIndicatorElement.remove();
                 typingIndicatorElement = null;
@@ -542,6 +551,7 @@
             adjustChatMessagesPadding();
         }
 
+        // Add custom action button
         function addCustomActionButton(text, onClickHandler) {
             if (customActionButton) {
                 customActionButton.remove();
@@ -552,9 +562,9 @@
             customActionButton.addEventListener('click', onClickHandler);
             chatMessages.appendChild(customActionButton);
             adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // Remove custom action button
         function removeCustomActionButton() {
             if (customActionButton) {
                 customActionButton.remove();
@@ -563,17 +573,21 @@
             adjustChatMessagesPadding();
         }
 
+        // Process user message and generate response
         async function processUserMessage(message) {
             addMessage(message, 'user');
             chatHistory.push({ role: "user", parts: [{ text: message }] });
-
             removeCustomActionButton();
 
-            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
-            let requestedQuantity = 0;
-
+            // Check for photo quantity request
+            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || 
+                                message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
+            
             if (quantityMatch) {
+                let requestedQuantity = 0;
                 const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase();
+                
+                // Convert text to number
                 switch (numText) {
                     case 'cinco': requestedQuantity = 5; break;
                     case 'dez': requestedQuantity = 10; break;
@@ -598,44 +612,74 @@
                     default: requestedQuantity = parseInt(numText); break;
                 }
 
+                // Validate quantity
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                     expectedPaymentAmount = (requestedQuantity / 5) * 10;
                     
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
-                    addMessage(pixMsg1, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
-                    
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
-                    addMessage(pixMsg2, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
-
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
-                    addMessage(pixMsg3, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
-                    
-                    addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                        chatInputArea.style.display = 'none';
-                        pixUploadArea.style.display = 'flex';
-                        waitingForComprovante = true;
-                        adjustChatMessagesPadding();
-                        initializeTesseractWorker();
-                    });
-
+                    // Send payment instructions
+                    await sendPaymentInstructions(requestedQuantity);
                     return;
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            addTypingIndicator();
+            // Generate AI response for normal messages
+            await generateAIResponse();
+        }
+
+        // Send payment instructions
+        async function sendPaymentInstructions(quantity) {
+            showTypingIndicator();
+            await delay(Math.random() * 2000 + 1000);
+            hideTypingIndicator();
+            
+            const pixMsg1 = `Perfeito! 🔥 Para ${quantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
+            addMessage(pixMsg1, 'suellen');
+            chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
+            
+            showTypingIndicator();
+            await delay(Math.random() * 2000 + 1000);
+            hideTypingIndicator();
+            
+            const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
+            addMessage(pixMsg2, 'suellen');
+            chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
+
+            showTypingIndicator();
+            await delay(Math.random() * 2000 + 1000);
+            hideTypingIndicator();
+            
+            const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
+            addMessage(pixMsg3, 'suellen');
+            chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
+            
+            // Add button to upload receipt
+            addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
+                showReceiptUploadArea();
+            });
+        }
+
+        // Show receipt upload area
+        function showReceiptUploadArea() {
+            chatInputArea.style.display = 'none';
+            pixUploadArea.style.display = 'flex';
+            adjustChatMessagesPadding();
+            initializeTesseractWorker().catch(error => {
+                console.error('Failed to initialize OCR:', error);
+                ocrStatusMessage.textContent = 'Erro ao iniciar validador. Tente novamente.';
+            });
+        }
+
+        // Hide receipt upload area
+        function hideReceiptUploadArea() {
+            pixUploadArea.style.display = 'none';
+            chatInputArea.style.display = 'flex';
+            adjustChatMessagesPadding();
+        }
+
+        // Generate AI response
+        async function generateAIResponse() {
+            await delay(5000);
+            showTypingIndicator();
 
             const personaPrompt = `
             Você é Suellen Rocha. Sua identidade é:
@@ -682,147 +726,243 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                
                 const result = await response.json();
+                let suellenResponse = "Desculpe, não entendi, amor. Pode repetir? 💋";
 
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const suellenResponse = result.candidates[0].content.parts[0].text;
-
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-                    removeTypingIndicator();
-                    addMessage(suellenResponse, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
-
-                } else {
-                    removeTypingIndicator();
-                    addMessage("Desculpe, não entendi, amor. Pode repetir? 💋", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Desculpe, não entendi, amor. Pode repetir? 💋" }] });
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    suellenResponse = result.candidates[0].content.parts[0].text;
                 }
+
+                await delay(Math.random() * 5000 + 5000);
+                hideTypingIndicator();
+                addMessage(suellenResponse, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
+
             } catch (error) {
                 console.error("Erro ao chamar a API Gemini:", error);
-                removeTypingIndicator();
+                hideTypingIndicator();
                 addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉" }] });
             }
         }
 
+        // Handle receipt file upload
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) {
-                receiptPreview.style.display = 'none';
-                pdfPreviewCanvas.style.display = 'none';
-                ocrStatusMessage.textContent = '';
+                resetReceiptPreview();
                 return;
             }
 
-            const reader = new FileReader();
-            let fileDataForOCR = null;
-
-            if (file.type.startsWith('image/')) {
-                reader.onload = async (e) => {
-                    await addMessage('', 'user', true, e.target.result);
-                    receiptPreview.src = e.target.result;
-                    receiptPreview.style.display = 'block';
-                    pdfPreviewCanvas.style.display = 'none';
-                    fileDataForOCR = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            } else if (file.type === 'application/pdf') {
-                reader.onload = async (e) => {
-                    const pdfData = e.target.result;
-                    await addMessage('', 'user', false, '', true, pdfData);
-
-                    receiptPreview.style.display = 'none';
-                    pdfPreviewCanvas.style.display = 'block';
-
-                    try {
-                        const loadingTask = pdfjsLib.getDocument({data: pdfData});
-                        const pdf = await loadingTask.promise;
-                        const page = await pdf.getPage(1);
-
-                        const ctx = pdfPreviewCanvas.getContext('2d');
-                        ctx.clearRect(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
-
-                        const viewport = page.getViewport({ scale: 3.0 });
-                        pdfPreviewCanvas.height = viewport.height;
-                        pdfPreviewCanvas.width = viewport.width;
-
-                        const renderContext = {
-                            canvasContext: ctx,
-                            viewport: viewport
-                        };
-                        await page.render(renderContext).promise;
-
-                        fileDataForOCR = pdfPreviewCanvas;
-                    } catch (pdfError) {
-                        console.error('Erro ao renderizar PDF para OCR:', pdfError);
-                        ocrStatusMessage.textContent = 'Erro ao carregar PDF para validação.';
-                        fileDataForOCR = null;
-                        removeTypingIndicator();
-                        addMessage("Não consegui processar o comprovante em PDF, amor. Pode me mandar um PDF mais simples ou uma foto? 💋", 'suellen');
-                        uploadPhotoButton.disabled = false;
-                        uploadPdfButton.disabled = false;
-                        receiptFileInput.value = '';
-                        pixUploadArea.style.display = 'none';
-                        chatInputArea.style.display = 'flex';
-                        adjustChatMessagesPadding();
-                        return;
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            }
-
-            await new Promise(resolve => reader.onloadend = resolve);
-            
-            if (!fileDataForOCR) {
-                return;
-            }
-            
-            addTypingIndicator();
-
-            if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Validador não carregado. Aguarde ou tente novamente.';
-                await initializeTesseractWorker();
-                if (!tesseractWorker) {
-                    removeTypingIndicator();
-                    addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
-                    uploadPhotoButton.disabled = false;
-                    uploadPdfButton.disabled = false;
-                    receiptFileInput.value = '';
-                    pixUploadArea.style.display = 'none';
-                    chatInputArea.style.display = 'flex';
-                    adjustChatMessagesPadding();
-                    return;
-                }
-            }
-
-            ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
+            // Prepare for processing
             uploadPhotoButton.disabled = true;
             uploadPdfButton.disabled = true;
+            ocrStatusMessage.textContent = 'Processando comprovante...';
 
             try {
-                const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
-                console.log('Texto extraído do comprovante:', text);
+                // Show preview
+                await showReceiptPreview(file);
                 
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                removeTypingIndicator();
-                handleComprovante(text);
+                // Start OCR processing
+                showTypingIndicator();
+                ocrStatusMessage.textContent = 'Validando pagamento...';
+                
+                const text = await processReceipt(file);
+                console.log('Texto extraído:', text);
+                
+                await delay(3000);
+                hideTypingIndicator();
+                validateReceipt(text);
+                
             } catch (error) {
-                console.error('Erro no processamento do comprovante:', error);
-                ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
+                console.error('Erro no processamento:', error);
+                ocrStatusMessage.textContent = 'Erro ao processar comprovante.';
+                hideTypingIndicator();
                 addMessage("Não consegui ler o comprovante, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
+                
             } finally {
                 uploadPhotoButton.disabled = false;
                 uploadPdfButton.disabled = false;
                 receiptFileInput.value = '';
-                
-                pixUploadArea.style.display = 'none';
-                chatInputArea.style.display = 'flex';
-                adjustChatMessagesPadding();
+                hideReceiptUploadArea();
             }
         });
 
+        // Reset receipt preview
+        function resetReceiptPreview() {
+            receiptPreview.src = '';
+            receiptPreview.style.display = 'none';
+            pdfPreviewCanvas.style.display = 'none';
+            ocrStatusMessage.textContent = '';
+        }
+
+        // Show receipt preview
+        async function showReceiptPreview(file) {
+            if (file.type.startsWith('image/')) {
+                const url = await readFileAsDataURL(file);
+                await addMessage('', 'user', true, url);
+                receiptPreview.src = url;
+                receiptPreview.style.display = 'block';
+                pdfPreviewCanvas.style.display = 'none';
+                
+            } else if (file.type === 'application/pdf') {
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                await addMessage('', 'user', false, '', true, arrayBuffer);
+                receiptPreview.style.display = 'none';
+                
+                try {
+                    const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+                    const pdf = await loadingTask.promise;
+                    const page = await pdf.getPage(1);
+                    
+                    const ctx = pdfPreviewCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
+                    
+                    const viewport = page.getViewport({ scale: 3.0 });
+                    pdfPreviewCanvas.height = viewport.height;
+                    pdfPreviewCanvas.width = viewport.width;
+                    
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    await page.render(renderContext).promise;
+                    pdfPreviewCanvas.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Erro ao renderizar PDF:', error);
+                    throw new Error('PDF rendering failed');
+                }
+            }
+        }
+
+        // Process receipt with OCR
+        async function processReceipt(file) {
+            if (!tesseractWorker) {
+                await initializeTesseractWorker();
+            }
+
+            let result;
+            if (file.type.startsWith('image/')) {
+                const url = await readFileAsDataURL(file);
+                result = await tesseractWorker.recognize(url);
+            } else if (file.type === 'application/pdf') {
+                result = await tesseractWorker.recognize(pdfPreviewCanvas);
+            } else {
+                throw new Error('Unsupported file type');
+            }
+
+            return result.data.text;
+        }
+
+        // Validate receipt content
+        function validateReceipt(text) {
+            const normalizedText = text.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9\s.,]/g, "");
+
+            // Check for valid names
+            const nameFound = validNames.some(name => normalizedText.includes(name));
+
+            // Extract amounts
+            const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
+            let extractedAmount = 0;
+            let match;
+            
+            while ((match = amountPattern.exec(normalizedText)) !== null) {
+                const amountStr = match[1].replace(',', '.');
+                const currentAmount = parseFloat(amountStr);
+                if (currentAmount > extractedAmount) {
+                    extractedAmount = currentAmount;
+                }
+            }
+
+            extractedAmount = Math.round(extractedAmount * 100) / 100;
+            expectedPaymentAmount = Math.round(expectedPaymentAmount * 100) / 100;
+
+            // Check validation
+            const isAmountValid = validPaymentAmounts.hasOwnProperty(extractedAmount);
+            const isExpectedAmount = Math.abs(extractedAmount - expectedPaymentAmount) < 0.01;
+
+            if ((isAmountValid || isExpectedAmount) && nameFound) {
+                const validAmount = isAmountValid ? extractedAmount : expectedPaymentAmount;
+                const photoCount = validPaymentAmounts[validAmount] || (validAmount / 10) * 5;
+                
+                addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
+                sendPhotos(validAmount);
+                ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
+            } else {
+                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?", 'suellen');
+                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
+                addCustomActionButton('Ver Fotos / Enviar Comprovante', showReceiptUploadArea);
+            }
+        }
+
+        // Send photos based on payment amount
+        async function sendPhotos(amountPaid) {
+            const numPhotos = validPaymentAmounts[amountPaid] || (amountPaid / 10) * 5;
+            const photosToSend = Math.min(numPhotos, 100 - photosSentCount);
+
+            if (photosToSend > 0) {
+                for (let i = 0; i < photosToSend; i++) {
+                    photosSentCount++;
+                    const imageUrl = `foto${photosSentCount}.webp`;
+                    
+                    showTypingIndicator();
+                    await delay(Math.random() * 1000 + 500);
+                    hideTypingIndicator();
+                    
+                    addMessage('', 'suellen', true, imageUrl);
+                    
+                    if (i < photosToSend - 1) {
+                        await delay(Math.random() * 2000 + 1000);
+                    }
+                }
+                
+                if (photosSentCount >= 100) {
+                    showTypingIndicator();
+                    await delay(Math.random() * 2000 + 1000);
+                    hideTypingIndicator();
+                    addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
+                }
+            } else {
+                showTypingIndicator();
+                await delay(Math.random() * 2000 + 1000);
+                hideTypingIndicator();
+                
+                if (photosSentCount >= 100) {
+                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
+                } else {
+                    addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
+                }
+            }
+        }
+
+        // Helper functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Event listeners
         uploadPhotoButton.addEventListener('click', () => {
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
@@ -843,102 +983,11 @@
             receiptFileInput.click();
         });
 
-        function handleComprovante(extractedText) {
-            const normalizedText = extractedText.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9\s.,]/g, "");
-
-            // Check for valid names
-            const nameFound = validNames.some(name => normalizedText.includes(name));
-
-            // Extract all amounts from text
-            const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
-            let extractedAmount = 0;
-            let match;
-            
-            while ((match = amountPattern.exec(normalizedText)) {
-                const amountStr = match[1].replace(',', '.');
-                const currentAmount = parseFloat(amountStr);
-                if (currentAmount > extractedAmount) {
-                    extractedAmount = currentAmount;
-                }
-            }
-
-            extractedAmount = Math.round(extractedAmount * 100) / 100;
-            expectedPaymentAmount = Math.round(expectedPaymentAmount * 100) / 100;
-
-            // Check if amount is valid and name is found
-            const isAmountValid = validPaymentAmounts.hasOwnProperty(extractedAmount);
-            const isExpectedAmount = Math.abs(extractedAmount - expectedPaymentAmount) < 0.01;
-
-            if ((isAmountValid || isExpectedAmount) && nameFound) {
-                const validAmount = isAmountValid ? extractedAmount : expectedPaymentAmount;
-                const photoCount = validPaymentAmounts[validAmount] || (validAmount / 10) * 5;
-                
-                addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
-                sendPhotosWithDelay(validAmount);
-                ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
-            } else {
-                let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
-                
-                addMessage(errorMessage, 'suellen');
-                ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
-                addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                    chatInputArea.style.display = 'none';
-                    pixUploadArea.style.display = 'flex';
-                    waitingForComprovante = true;
-                    adjustChatMessagesPadding();
-                    initializeTesseractWorker();
-                });
-            }
-        }
-
-        async function sendPhotosWithDelay(amountPaid) {
-            const numPhotos = validPaymentAmounts[amountPaid] || (amountPaid / 10) * 5;
-            const photosToSendThisBatch = Math.min(numPhotos, 100 - photosSentCount);
-
-            if (photosToSendThisBatch > 0) {
-                for (let i = 0; i < photosToSendThisBatch; i++) {
-                    photosSentCount++;
-                    const imageUrl = `foto${photosSentCount}.webp`;
-                    
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-                    removeTypingIndicator();
-                    
-                    addMessage('', 'suellen', true, imageUrl);
-                    
-                    if (i < photosToSendThisBatch - 1) {
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    }
-                }
-                
-                if (photosSentCount >= 100) {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
-                }
-            } else {
-                if (photosSentCount >= 100) {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
-                } else {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
-                }
-            }
-        }
-
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
             if (message) {
                 chatInput.value = '';
-                processUserMessage(message);
+                processUserMessage(message).catch(console.error);
             }
         });
 
@@ -948,23 +997,25 @@
             }
         });
 
-        window.onload = () => {
+        // Initialize chat
+        window.addEventListener('load', () => {
             adjustChatContainerHeight();
-
             window.addEventListener('resize', adjustChatContainerHeight);
+            
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
-            
-            setTimeout(() => {
-                addTypingIndicator();
-                setTimeout(() => {
-                    removeTypingIndicator();
-                    addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
-                }, Math.random() * 4000 + 3000); 
-            }, 4000); 
-        };
+
+            // Initial greeting
+            delay(4000).then(() => {
+                showTypingIndicator();
+                return delay(Math.random() * 4000 + 3000);
+            }).then(() => {
+                hideTypingIndicator();
+                addMessage("Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?", 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 😉 Como posso te encantar hoje?" }] });
+            });
+        });
     </script>
 </body>
 </html>
