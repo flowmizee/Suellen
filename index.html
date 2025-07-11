@@ -787,8 +787,9 @@
             } catch (error) {
                 console.error("Erro ao chamar a API Gemini:", error);
                 removeTypingIndicator();
-                addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉" }] });
+                    addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉" }] });
+                }
             }
         }
 
@@ -821,7 +822,7 @@
                     await addMessage('', 'user', false, '', true, pdfData); // Add PDF preview to chat bubble
 
                     receiptPreview.style.display = 'none';
-                    pdfPreviewCanvas.style.display = 'block'; // Ensure the OCR canvas is visible (even if off-screen)
+                    pdfPreviewCanvas.style.display = 'block';
 
                     try {
                         const loadingTask = pdfjsLib.getDocument({data: pdfData});
@@ -843,7 +844,9 @@
                         };
                         await page.render(renderContext).promise;
 
-                        fileDataForOCR = pdfPreviewCanvas; // Pass the canvas element for OCR
+                        // Convert canvas to image data for Tesseract
+                        const imageData = ctx.getImageData(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
+                        fileDataForOCR = imageData;
                     } catch (pdfError) {
                         console.error('Erro ao renderizar PDF para OCR:', pdfError);
                         ocrStatusMessage.textContent = 'Erro ao carregar PDF para validação.';
@@ -975,10 +978,7 @@
                 sendPhotosWithDelay(expectedPaymentAmount);
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
-                // Modified error message: more affectionate and generic
-                let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
-                
-                addMessage(errorMessage, 'suellen');
+                addMessage("Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?", 'suellen');
                 ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
                 // Always show the custom action button to re-upload
                 addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
