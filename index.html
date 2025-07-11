@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat de Vendas</title>
+    <title>Chat com Suellen</title>
     <style>
         :root {
             --primary-color: #25D366;
@@ -51,6 +51,9 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .profile-pic {
@@ -75,7 +78,7 @@
             padding: 15px;
             overflow-y: auto;
             background-color: var(--gray);
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA+UlEQVQ4y+3UMUoDQRTG8Z8psJBUKTyAR7ATvIBgYSM2Fh7AG3gBG0GxECwELQJik1qwsBAkEIuQZLGwsJj3LDOw7CabTbzwYJh5M9/7Zpg3Q6VSqfQf1cMq9vGCN7zjCQ+4xW2RcIh7fOITL3jGMx7xiDvc4BqX2M0TDnCHL3zjK1Nf+MAn3nGNCQZZwj4u8I5xgegYI1xiJ0vYxQhvBcI8jXGOrSzhBq4KRP9qiPUs4RouCkT/6gJrWcIlnBeI/tUZFrOECzjLEf2rU8xnCedxkiP6V8eYyxLO4ShH9K8OMZMlnMZ+jmhSe5jKEk5hL0c0qV1MZgkT7OSIJrWNiSxhnG1sZYkmtYmxLGGMTWxkiSa1jv+JfgCJ5DfAoYx1jAAAAABJRU5ErkJggg==');
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA+UlEQVQ4y+3UMUoDQRTG8Z8psJBUKTyAR7ATvIBgYSM2Fh7AG3gBG0GxECwELQJik1qwsBAkEIuQZLGwsJj3LDOw7CabTbzwYJh5M9/7Zpg3Q6VSqfQf1cMq9vGCN7zjCQ+4xW2RcIh7fOITL3jGMx7xiHvc4BqX2M0TDnCHL3zjK1Nf+MAn3nGNCQZZwj4u8I5xgegYI1xiJ0vYxQhvBcI8jXGOrSzhBq4KRP9qiPUs4RouCkT/6gJrWcIlnBeI/tUZFrOECzjLEf2rU8xnCedxkiP6V8eYyxLO4ShH9K8OMZMlnMZ+jmhSe5jKEk5hL0c0qV1MZgkT7OSIJrWNiSxhnG1sZYkmtYmxLGGMTWxkiSa1jv+JfgCJ5DfAoYx1jAAAAABJRU5ErkJggg==');
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -83,9 +86,9 @@
 
         .message {
             max-width: 80%;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.4;
             word-wrap: break-word;
             position: relative;
@@ -301,18 +304,18 @@
         .option-button:hover {
             background-color: #054d43;
         }
-        
-        .button-container {
-            display: flex;
-            gap: 5px;
-            margin-left: auto;
-        }
-        
-        .attach-button, .send-photo-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
+
+        @media (min-width: 768px) {
+            .message {
+                padding: 10px 15px;
+                font-size: 15px;
+                max-width: 70%;
+            }
+            
+            .chat-container {
+                height: 90vh;
+                border-radius: 10px;
+            }
         }
     </style>
 </head>
@@ -367,14 +370,12 @@
                 </svg>
             </button>
             <input type="text" class="chat-input" id="chat-input" placeholder="Digite sua mensagem...">
-            <div class="button-container">
-                <button class="attach-button" id="send-photo-button">
-                    <img src="anexar.webp" width="24" height="24" alt="Anexar">
-                </button>
-                <button class="send-button" id="send-button">
-                    <img src="enviarfoto.webp" width="24" height="24" alt="Enviar">
-                </button>
-            </div>
+            <button class="send-button" id="send-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -397,7 +398,6 @@
         const pdfPreview = document.getElementById('pdf-preview');
         const ocrStatus = document.getElementById('ocr-status');
         const statusText = document.getElementById('status-text');
-        const sendPhotoButton = document.getElementById('send-photo-button');
 
         // Variáveis de estado
         let chatHistory = [];
@@ -420,9 +420,9 @@
         window.onload = async () => {
             // Saudação inicial
             setTimeout(async () => {
-                await addMessageWithDelay("Olá, meu bem! Que bom te ver por aqui... 😉", 'bot', 3000, 4000);
-                await addMessageWithDelay("Eu sou a Suellen Rocha e estou aqui para te oferecer fotos exclusivas!", 'bot', 3000, 4000);
-                await addMessageWithDelay("Quantas fotos você gostaria de receber? (5, 10, 15, ..., até 100)", 'bot', 3000, 4000);
+                await addMessageWithDelay("Olá, meu bem! Que bom te ver por aqui... 😉", 'bot');
+                await addMessageWithDelay("Eu sou a Suellen Rocha e estou aqui para te oferecer fotos exclusivas!", 'bot');
+                await addMessageWithDelay("Quantas fotos você gostaria de receber? (5, 10, 15, ..., até 100)", 'bot');
             }, 1000);
 
             // Event listeners
@@ -432,11 +432,6 @@
             });
 
             attachButton.addEventListener('click', () => {
-                fileInput.accept = 'image/*,.pdf';
-                fileInput.click();
-            });
-
-            sendPhotoButton.addEventListener('click', () => {
                 fileInput.accept = 'image/*,.pdf';
                 fileInput.click();
             });
@@ -476,9 +471,9 @@
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                     expectedPaymentAmount = (requestedQuantity / 5) * 10;
                     
-                    await addMessageWithDelay(`Perfeito! Para ${requestedQuantity} fotos exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2)}. 😉`, 'bot', 3000, 4000);
-                    await addMessageWithDelay(`Minha chave PIX é: \n\n**98981420070** (CPF)\n\nNome: **Antonio Renimar Pinheiro Almeida**`, 'bot', 3000, 4000);
-                    await addMessageWithDelay(`Envie o comprovante aqui mesmo que eu libero suas fotos! ❤️`, 'bot', 3000, 4000);
+                    await addMessageWithDelay(`Perfeito! Para ${requestedQuantity} fotos exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2)}. 😉`, 'bot');
+                    await addMessageWithDelay(`Minha chave PIX é: \n\n**98981420070** (CPF)\n\nNome: **Antonio Renimar Pinheiro Almeida**`, 'bot');
+                    await addMessageWithDelay(`Envie o comprovante aqui mesmo que eu libero suas fotos! ❤️`, 'bot');
                     
                     // Mostrar área de upload
                     showPixUploadArea();
@@ -487,7 +482,7 @@
             }
             
             // Se não for uma quantidade válida, responder genericamente
-            await addMessageWithDelay("Por favor, me diga quantas fotos você gostaria (5, 10, 15, etc.)", 'bot', 3000, 4000);
+            await addMessageWithDelay("Por favor, me diga quantas fotos você gostaria (5, 10, 15, etc.)", 'bot');
         }
 
         // Função para mostrar a área de upload do PIX
@@ -584,7 +579,7 @@
                 ocrStatus.textContent = 'Erro ao processar comprovante';
                 ocrStatus.className = 'status-message error-message';
                 
-                await addMessageWithDelay("Ocorreu um erro ao processar seu comprovante. Por favor, tente novamente ou envie uma imagem mais clara.", 'bot', 3000, 4000);
+                await addMessageWithDelay("Ocorreu um erro ao processar seu comprovante. Por favor, tente novamente ou envie uma imagem mais clara.", 'bot');
                 showPixUploadArea();
             }
         }
@@ -641,7 +636,7 @@
                 pixUploadArea.style.display = 'none';
                 isWaitingPayment = false;
                 
-                await addMessageWithDelay("Pagamento confirmado! Aqui estão suas fotos exclusivas 😘", 'bot', 3000, 4000);
+                await addMessageWithDelay("Pagamento confirmado! Aqui estão suas fotos exclusivas 😘", 'bot');
                 
                 // Enviar as fotos
                 await sendPhotos(expectedPaymentAmount);
@@ -657,7 +652,7 @@
                 errorMessage += "- O nome no comprovante é: Antonio Renimar Pinheiro Almeida\n\n";
                 errorMessage += "Você pode tentar enviar novamente:";
                 
-                await addMessageWithDelay(errorMessage, 'bot', 3000, 4000);
+                await addMessageWithDelay(errorMessage, 'bot');
                 showPixUploadArea();
             }
         }
@@ -668,7 +663,7 @@
             const photosToSend = Math.min(numPhotos, 100 - photosSentCount);
             
             if (photosToSend <= 0) {
-                await addMessageWithDelay("Você já recebeu todas as fotos disponíveis! Obrigada por participar ❤️", 'bot', 3000, 4000);
+                await addMessageWithDelay("Você já recebeu todas as fotos disponíveis! Obrigada por participar ❤️", 'bot');
                 return;
             }
             
@@ -690,9 +685,9 @@
             }
             
             if (photosSentCount >= 100) {
-                await addMessageWithDelay("Essas foram todas as fotos disponíveis! Espero que tenha gostado 😘", 'bot', 3000, 4000);
+                await addMessageWithDelay("Essas foram todas as fotos disponíveis! Espero que tenha gostado 😘", 'bot');
             } else {
-                await addMessageWithDelay(`Você já recebeu ${photosSentCount} fotos. Quer mais alguma coisa?`, 'bot', 3000, 4000);
+                await addMessageWithDelay(`Você já recebeu ${photosSentCount} fotos. Quer mais alguma coisa?`, 'bot');
             }
         }
 
@@ -714,11 +709,10 @@
             scrollToBottom();
         }
 
-        async function addMessageWithDelay(text, sender, typingDelayMs = 3000, messageDelayMs = 4000) {
+        async function addMessageWithDelay(text, sender, delayMs = 1000) {
             showTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, typingDelayMs));
+            await new Promise(resolve => setTimeout(resolve, delayMs));
             hideTypingIndicator();
-            await new Promise(resolve => setTimeout(resolve, messageDelayMs - typingDelayMs));
             addMessage(text, sender);
         }
 
