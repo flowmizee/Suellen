@@ -3,652 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat WhatsApp</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+    <title>Suellen Rocha</title>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Segoe UI', sans-serif;
-        height: 100%;
-        background-color: #ece5dd;
-      }
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      .chat-container {
-        width: 100%;
-        height: 100dvh;
-        max-width: 430px;
-        background-color: #fff;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        position: relative;
-      }
-      .chat-header {
-        background-color: #075E54;
-        padding: 10px 15px;
-        display: flex;
-        align-items: center;
-        color: white;
-      }
-      .chat-header img {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        margin-right: 12px;
-        object-fit: cover;
-      }
-      .chat-header .name {
-        font-size: 18px;
-        font-weight: bold;
-      }
-      .chat-body {
-        flex: 1;
-        padding: 15px;
-        overflow-y: auto;
-        background-color: #e5ddd5;
-        display: flex;
-        flex-direction: column;
-      }
-      .message {
-        max-width: 75%;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        font-size: 15px;
-        border-radius: 8px;
-        line-height: 1.4;
-        word-wrap: break-word;
-      }
-      .user {
-        align-self: flex-end;
-        background-color: #dcf8c6;
-        border-bottom-right-radius: 0;
-      }
-      .bot {
-        align-self: flex-start;
-        background-color: white;
-        border-bottom-left-radius: 0;
-      }
-      .typing-indicator {
-        align-self: flex-start;
-        background-color: white;
-        border-bottom-left-radius: 0;
-        max-width: 50px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        padding: 5px 10px;
-      }
-      .typing-indicator span {
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        margin: 0 1px;
-        background-color: #999;
-        border-radius: 50%;
-        animation: blink 1.4s infinite both;
-      }
-      .typing-indicator span:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      .typing-indicator span:nth-child(3) {
-        animation-delay: 0.4s;
-      }
-      @keyframes blink {
-        0%, 80%, 100% { opacity: 0; }
-        40% { opacity: 1; }
-      }
-      .chat-footer {
-        display: flex;
-        padding: 8px 10px;
-        background-color: #fff;
-        border-top: 1px solid #ccc;
-        align-items: center;
-        position: relative;
-      }
-      .chat-footer input {
-        flex: 1;
-        padding: 12px;
-        border: none;
-        font-size: 16px;
-        border-radius: 20px;
-        margin-right: 8px;
-        background-color: #f0f0f0;
-        outline: none;
-        padding-left: 40px;
-      }
-      .chat-footer button#actionButton {
-        width: 40px;
-        height: 40px;
-        background-color: #1bac5f;
-        border: none;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-      }
-      .chat-footer button#actionButton img {
-        width: 20px;
-        height: 20px;
-      }
-      .option-buttons {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-      }
-      .option-button {
-        background-color: #075E54;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-      }
-      .option-button:hover {
-        background-color: #0b7a67;
-      }
-      .preview-image {
-        max-width: 100%;
-        border-radius: 8px;
-        margin-top: 10px;
-      }
-      .upload-label {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 12px;
-        background-color: #075E54;
-        color: white;
-        border-radius: 20px;
-        cursor: pointer;
-        margin-top: 10px;
-        margin-right: 10px;
-        font-size: 14px;
-        gap: 6px;
-      }
-      .upload-label img {
-        width: 16px;
-        height: 16px;
-      }
-      #uploadComprovanteFoto, #uploadComprovantePDF {
-        display: none;
-      }
-      .pix-info {
-        background-color: #f0f0f0;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
-      }
-      .pix-info p {
-        margin: 5px 0;
-      }
-      .pix-info strong {
-        color: #075E54;
-      }
-      .comprovante-container {
-        margin-top: 15px;
-      }
-      .comprovante-preview {
-        max-width: 100%;
-        max-height: 200px;
-        border-radius: 8px;
-        margin-top: 10px;
-        border: 1px solid #ccc;
-      }
-      .success-message {
-        color: #25D366;
-        font-weight: bold;
-        margin-top: 10px;
-      }
-      .error-message {
-        color: #f44336;
-        font-weight: bold;
-        margin-top: 10px;
-      }
-      .pdf-warning {
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        font-size: 14px;
-      }
-      .upload-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
-      }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e5ddd5;
+            background-image: linear-gradient(#e5ddd5, #d2dbd0);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-header {
+            background-color: #075e54;
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+
+        .chat-name {
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .chat-status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+            background-image: url('https://web.whatsapp.com/img/bg-chat-tile-light_a4be512e7195b6b733d9110b408f075d.png');
+            background-repeat: repeat;
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .received {
+            background-color: white;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+
+        .sent {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            background-color: white;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            margin-bottom: 10px;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #999;
+            margin-right: 3px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+            margin-right: 0;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        .input-container {
+            display: flex;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-top: 1px solid #ddd;
+        }
+
+        .message-input {
+            flex: 1;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin: 0 5px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .attach-button, .camera-button {
+            width: 24px;
+            height: 24px;
+            padding: 8px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .attach-button:hover, .camera-button:hover {
+            opacity: 1;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .photo-item {
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.02);
+        }
+
+        .photo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #666;
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .received .timestamp {
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <div class="chat-container">
-      <div class="chat-header">
-        <img src="perfil.webp" alt="Perfil">
-        <div class="name"><strong>Suellen Rocha</strong></div>
-      </div>
-      <div class="chat-body" id="chatBody"></div>
-      <div class="chat-footer">
-        <input type="text" id="userInput" placeholder="Digite sua mensagem..." onkeypress="handleKeyPress(event)">
-        <button id="actionButton" title="Enviar">
-          <img id="actionIcon" src="mensagem.webp" alt="Ícone">
-        </button>
-      </div>
+        <div class="chat-header">
+            <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic">
+            <div>
+                <div class="chat-name">Suellen Rocha</div>
+                <div class="chat-status">online</div>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messages-container">
+            <!-- Messages will be inserted here -->
+        </div>
+
+        <div class="input-container">
+            <label for="attach-file">
+                <img src="https://cdn-icons-png.flaticon.com/512/126/126477.png" alt="Anexar" class="attach-button">
+            </label>
+            <input type="file" id="attach-file" class="file-input" accept="image/*,.pdf">
+            
+            <input type="text" class="message-input" id="message-input" placeholder="Digite uma mensagem...">
+            
+            <label for="send-photo">
+                <img src="https://cdn-icons-png.flaticon.com/512/126/126477.png" alt="Câmera" class="camera-button">
+            </label>
+            <input type="file" id="send-photo" class="file-input" accept="image/*" capture="camera">
+        </div>
+    </div>
+
+    <div class="photo-modal" id="photo-modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modal-image">
     </div>
 
     <script>
-      // Configuração do PDF.js
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
-      
-      const PIX_KEY = '98981420070';
-      const RECEIVER_NAME = 'Antonio Renimar Pinheiro Almeida';
-      const RECEIVER_KEYWORDS = ['antonio', 'renimar', 'pinheiro', 'almeida'];
-      
-      let isWaitingResponse = false;
-      let typingEl = null;
-      let isWaitingPayment = false;
-      let uploadedComprovante = null;
-      let comprovanteUploaded = false;
-      let expectedAmount = 0;
-
-      // Valores válidos para os pacotes de fotos (R$10 para cada 5 fotos)
-      const validAmounts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
-
-      window.onload = async () => {
-        // Mensagem inicial após 3 segundos
-        setTimeout(async () => {
-          await simulateTyping("Oiê, meu bem! Que bom te ver por aqui... 🙈");
+        // API key for Gemini
+        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
+        
+        // DOM elements
+        const messagesContainer = document.getElementById('messages-container');
+        const messageInput = document.getElementById('message-input');
+        const attachFile = document.getElementById('attach-file');
+        const sendPhoto = document.getElementById('send-photo');
+        const photoModal = document.getElementById('photo-modal');
+        const modalImage = document.getElementById('modal-image');
+        const closeModal = document.querySelector('.close-modal');
+        
+        // Chat state
+        let waitingForPayment = false;
+        let photoCount = 0;
+        let totalValue = 0;
+        
+        // Initial message with delays
+        setTimeout(() => {
+            showTypingIndicator();
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                addMessage('Oiê, meu bem! Que bom te ver por aqui... 🙈', 'received');
+            }, 4000);
         }, 3000);
-      };
-
-      function appendMessage(sender, message) {
-        const chatBody = document.getElementById("chatBody");
-        const msgEl = document.createElement("div");
-        msgEl.className = `message ${sender}`;
-        msgEl.innerHTML = message;
-        chatBody.appendChild(msgEl);
-        chatBody.scrollTop = chatBody.scrollHeight;
-      }
-
-      function showTypingIndicator() {
-        if (!typingEl) {
-          typingEl = document.createElement("div");
-          typingEl.className = "typing-indicator";
-          typingEl.innerHTML = "<span></span><span></span><span></span>";
-          document.getElementById("chatBody").appendChild(typingEl);
-          document.getElementById("chatBody").scrollTop = document.getElementById("chatBody").scrollHeight;
-        }
-      }
-
-      function hideTypingIndicator() {
-        if (typingEl) {
-          typingEl.remove();
-          typingEl = null;
-        }
-      }
-
-      async function simulateTyping(message, delay = 4000) {
-        // 3 segundos sem aparecer nada
-        await new Promise(r => setTimeout(r, 3000));
         
-        // Mostra o indicador de digitação por 4 segundos
-        showTypingIndicator();
-        await new Promise(r => setTimeout(r, 4000));
-        hideTypingIndicator();
-        
-        if (message) {
-          appendMessage("bot", message);
-        }
-      }
-
-      function handleKeyPress(event) {
-        if (event.key === 'Enter' && !isWaitingResponse) {
-          sendMessage();
-        }
-      }
-
-      async function sendMessage() {
-        if (isWaitingResponse) return;
-        const text = userInput.value.trim();
-        if (!text) return;
-        
-        appendMessage("user", text);
-        userInput.value = "";
-        isWaitingResponse = true;
-        showTypingIndicator();
-
-        const lower = text.toLowerCase();
-        const normalized = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-        // Verifica se a mensagem contém um número de fotos solicitado
-        const quantityMatch = text.match(/(\d+)\s*(fotos|foto)/i) || 
-                             text.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
-        
-        if (quantityMatch) {
-          let requestedQuantity = 0;
-          const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase();
-          
-          switch (numText) {
-            case 'cinco': requestedQuantity = 5; break;
-            case 'dez': requestedQuantity = 10; break;
-            case 'quinze': requestedQuantity = 15; break;
-            case 'vinte': requestedQuantity = 20; break;
-            case 'vinte e cinco': requestedQuantity = 25; break;
-            case 'trinta': requestedQuantity = 30; break;
-            case 'trinta e cinco': requestedQuantity = 35; break;
-            case 'quarenta': requestedQuantity = 40; break;
-            case 'quarenta e cinco': requestedQuantity = 45; break;
-            case 'cinquenta': requestedQuantity = 50; break;
-            case 'cinquenta e cinco': requestedQuantity = 55; break;
-            case 'sessenta': requestedQuantity = 60; break;
-            case 'sessenta e cinco': requestedQuantity = 65; break;
-            case 'setenta': requestedQuantity = 70; break;
-            case 'setenta e cinco': requestedQuantity = 75; break;
-            case 'oitenta': requestedQuantity = 80; break;
-            case 'oitenta e cinco': requestedQuantity = 85; break;
-            case 'noventa': requestedQuantity = 90; break;
-            case 'noventa e cinco': requestedQuantity = 95; break;
-            case 'cem': requestedQuantity = 100; break;
-            default: requestedQuantity = parseInt(numText); break;
-          }
-
-          if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
-            expectedAmount = (requestedQuantity / 5) * 10;
-            
-            // Mostra as mensagens de pagamento
-            await simulateTyping(`Perfeito! Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedAmount.toFixed(2).replace('.', ',')}. 😉`);
-            await simulateTyping(`Minha chave PIX é: <strong>${PIX_KEY}</strong>`);
-            await simulateTyping(`Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`);
-            
-            // Mostra opções para enviar comprovante
-            showPaymentOptions();
-          } else {
-            await simulateTyping("Hmm... os pacotes são de 5 em 5 fotos, amor. Pode escolher 5, 10, 15, 20... até 100? 💋");
-          }
-        } else {
-          // Resposta padrão para outras mensagens
-          await simulateTyping("Quantas fotos você gostaria, meu bem? Os pacotes são de 5 em 5 fotos. 😉");
-        }
-        
-        isWaitingResponse = false;
-      }
-
-      async function showPaymentOptions() {
-        isWaitingPayment = true;
-        comprovanteUploaded = false;
-        
-        const pixInfoHTML = `
-          <div class="pix-info">
-            <p><strong>📌 Chave Pix (CPF):</strong> ${PIX_KEY}</p>
-            <p><strong>📌 Nome:</strong> ${RECEIVER_NAME}</p>
-            <p><strong>💰 Valor:</strong> R$ ${expectedAmount.toFixed(2).replace('.', ',')}</p>
-            <div class="pdf-warning">
-              <strong>📄 Atenção:</strong> Você pode enviar o comprovante em imagem (JPG/PNG) ou em PDF.
-            </div>
-          </div>
-          <div class="comprovante-container">
-            <div class="upload-buttons">
-              <label for="uploadComprovanteFoto" class="upload-label">
-                <img src="camera.webp" alt="Enviar imagem" />
-                Enviar Comprovante em Foto
-              </label>
-              <label for="uploadComprovantePDF" class="upload-label">
-                <img src="pdf-icon.webp" alt="Enviar PDF" />
-                Enviar Comprovante em PDF
-              </label>
-            </div>
-            <input type="file" accept="image/*" id="uploadComprovanteFoto" style="display: none" />
-            <input type="file" accept=".pdf" id="uploadComprovantePDF" style="display: none" />
-          </div>
-        `;
-        
-        appendMessage("bot", pixInfoHTML);
-        
-        // Configurar os listeners para os uploads
-        document.getElementById('uploadComprovanteFoto').addEventListener('change', function(e) {
-          if (!comprovanteUploaded) {
-            handleComprovanteUpload(e, 'image');
-            comprovanteUploaded = true;
-          }
+        // Event listeners
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && messageInput.value.trim() !== '') {
+                sendMessage(messageInput.value);
+                messageInput.value = '';
+            }
         });
         
-        document.getElementById('uploadComprovantePDF').addEventListener('change', function(e) {
-          if (!comprovanteUploaded) {
-            handleComprovanteUpload(e, 'pdf');
-            comprovanteUploaded = true;
-          }
+        attachFile.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
         });
-      }
-
-      async function handleComprovanteUpload(event, type) {
-        const file = event.target.files[0];
-        if (!file) return;
         
-        try {
-          if (type === 'pdf') {
-            // Processar PDF primeiro para mostrar o comprovante
-            await processPDFComprovante(file);
-          } else {
-            // Processar imagem primeiro para mostrar o comprovante
-            await processImageComprovante(file);
-          }
-          
-          // Mostra mensagem de validação
-          appendMessage("bot", "🔄 Só um momento… Estou validando seu pagamento. 😉");
-          
-          showTypingIndicator();
-          
-          // Agora fazer a validação
-          if (type === 'pdf') {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-            let extractedText = '';
+        sendPhoto.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+        
+        closeModal.addEventListener('click', function() {
+            photoModal.style.display = 'none';
+        });
+        
+        // Functions
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator received';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
             
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const textContent = await page.getTextContent();
-              const strings = textContent.items.map(item => item.str);
-              extractedText += strings.join(' ') + '\n';
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            
+            messageDiv.innerHTML = `
+                <div>${text}</div>
+                <div class="timestamp">${hours}:${minutes}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function sendMessage(text) {
+            addMessage(text, 'sent');
+            
+            // Process user message
+            if (waitingForPayment) {
+                // Already in payment flow, ignore other messages
+                return;
             }
             
-            await verifyComprovanteText(extractedText);
-          } else {
-            const reader = new FileReader();
-            const imageData = await new Promise((resolve, reject) => {
-              reader.onload = e => resolve(e.target.result);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            });
-            await verifyComprovante(imageData);
-          }
-        } catch (error) {
-          console.error("Erro ao processar comprovante:", error);
-          hideTypingIndicator();
-          showComprovanteError();
-        }
-      }
-
-      async function processImageComprovante(file) {
-        const reader = new FileReader();
-        return new Promise((resolve, reject) => {
-          reader.onload = function(e) {
-            uploadedComprovante = e.target.result;
-            const previewHTML = `
-              <div class="comprovante-container">
-                <p>Comprovante enviado (imagem):</p>
-                <img src="${uploadedComprovante}" class="comprovante-preview">
-              </div>
-            `;
-            appendMessage("user", previewHTML);
-            resolve();
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      async function processPDFComprovante(file) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-        
-        // Criar uma imagem da primeira página para mostrar como preview
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1.0 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-        
-        const previewImage = canvas.toDataURL('image/jpeg');
-        uploadedComprovante = previewImage;
-        
-        // Mostrar preview do PDF
-        const previewHTML = `
-          <div class="comprovante-container">
-            <p>Comprovante enviado (PDF):</p>
-            <img src="${previewImage}" class="comprovante-preview">
-          </div>
-        `;
-        appendMessage("user", previewHTML);
-      }
-
-      async function verifyComprovante(imageData) {
-        try {
-          const { data: { text } } = await Tesseract.recognize(
-            imageData,
-            'por',
-            { logger: m => console.log(m) }
-          );
-          
-          await verifyComprovanteText(text);
-        } catch (error) {
-          console.error("Erro ao verificar comprovante:", error);
-          throw error;
-        }
-      }
-
-      async function verifyComprovanteText(text) {
-        hideTypingIndicator();
-        
-        // Normaliza o texto para facilitar a busca
-        const normalizedText = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        
-        // Verifica se o texto contém qualquer uma das palavras-chave do nome do recebedor
-        const hasReceiverName = RECEIVER_KEYWORDS.some(keyword => normalizedText.includes(keyword));
-        
-        // Verifica se o texto contém o valor esperado
-        let hasCorrectAmount = false;
-        const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
-        let match;
-        
-        while ((match = amountPattern.exec(normalizedText)) !== null) {
-          const amountStr = match[1].replace(',', '.');
-          const currentAmount = parseFloat(amountStr);
-          
-          // Verifica se o valor encontrado está na lista de valores válidos
-          if (validAmounts.includes(currentAmount) && currentAmount === expectedAmount) {
-            hasCorrectAmount = true;
-            break;
-          }
+            // Check if user is asking for photos
+            const photoMatch = text.match(/\b(\d{1,3})\b/);
+            if (photoMatch && !isNaN(photoMatch[1])) {
+                const count = parseInt(photoMatch[1]);
+                if (count >= 1 && count <= 100) {
+                    startPaymentFlow(count);
+                } else {
+                    setTimeout(() => {
+                        showTypingIndicator();
+                        
+                        setTimeout(() => {
+                            hideTypingIndicator();
+                            addMessage('Meu bem, só posso vender de 1 até 100 fotinhas, tá? 😘 Escolhe aí entre esses valores... 😈🔥', 'received');
+                        }, 4000);
+                    }, 3000);
+                }
+            } else if (text.toLowerCase().includes('foto') || text.toLowerCase().includes('fotinha') || text.toLowerCase().includes('pacote')) {
+                setTimeout(() => {
+                    showTypingIndicator();
+                    
+                    setTimeout(() => {
+                        hideTypingIndicator();
+                        addMessage('Quantas fotinhas você quer, meu amor? Cada uma custa R$ 2,00... Pode pedir de 1 até 100, viu? 😏❤️', 'received');
+                    }, 4000);
+                }, 3000);
+            } else {
+                // Default response
+                setTimeout(() => {
+                    showTypingIndicator();
+                    
+                    setTimeout(() => {
+                        hideTypingIndicator();
+                        addMessage('Hmm... quer minhas fotinhas especiais, amor? Só me dizer quantas você quer... de 1 até 100, tá bom? 😈🔥', 'received');
+                    }, 4000);
+                }, 3000);
+            }
         }
         
-        if (hasReceiverName && hasCorrectAmount) {
-          // Mostrar mensagem de sucesso
-          const successHTML = `
-            <div class="success-message">
-              ✅ Pagamento confirmado! Obrigada, meu bem! 😘
-            </div>
-            <p>Seu pacote com ${expectedAmount / 10 * 5} fotos exclusivas está sendo enviado...</p>
-          `;
-          appendMessage("bot", successHTML);
-          
-          // Simular envio das fotos
-          await sendPhotos(expectedAmount);
-        } else {
-          showComprovanteError();
+        function startPaymentFlow(count) {
+            photoCount = count;
+            totalValue = count * 2;
+            waitingForPayment = true;
+            
+            // Send messages with delays
+            setTimeout(() => {
+                showTypingIndicator();
+                
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    addMessage(`Claro, meu bem… 💋\nEsse pacotinho com ${photoCount} fotinhas sai por R$ ${totalValue},00 😈🔥`, 'received');
+                    
+                    // Second message after delay
+                    setTimeout(() => {
+                        showTypingIndicator();
+                        
+                        setTimeout(() => {
+                            hideTypingIndicator();
+                            addMessage('A chave Pix é: 98981420070 ✨', 'received');
+                            
+                            // Third message after delay
+                            setTimeout(() => {
+                                showTypingIndicator();
+                                
+                                setTimeout(() => {
+                                    hideTypingIndicator();
+                                    addMessage('O Pix tá no nome do meu assessor, tá bom?\nÉ só mandar o comprovante aqui no chat que eu libero tudinho rapidinho… 😏🔥\nTô aqui só te esperando, meu bem… ❤️😈', 'received');
+                                }, 4000);
+                            }, 2000);
+                        }, 4000);
+                    }, 2000);
+                }, 4000);
+            }, 3000);
         }
-      }
-
-      async function sendPhotos(amount) {
-        const numPhotos = amount / 10 * 5;
         
-        for (let i = 1; i <= numPhotos; i++) {
-          if (i > 100) break; // Limite de 100 fotos
-          
-          await simulateTyping("", 2000);
-          appendMessage("bot", `<img src="foto${i}.webp" class="preview-image">`);
-          
-          // Pequeno delay entre fotos
-          if (i < numPhotos) {
-            await new Promise(r => setTimeout(r, 1500));
-          }
+        function handleFileUpload(file) {
+            if (!waitingForPayment) {
+                addMessage('Me envia o comprovante só depois que eu te passar os valores, tá bom, amor? 😘', 'received');
+                return;
+            }
+            
+            // Check if it's an image or PDF
+            if (!file.type.match('image.*') && !file.type.match('application/pdf')) {
+                addMessage('Me manda só imagem ou PDF do comprovante, meu bem... ❤️', 'received');
+                return;
+            }
+            
+            // Display the sent file
+            if (file.type.match('image.*')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    addMessage('<div style="max-width: 200px;"><img src="' + e.target.result + '" style="max-width: 100%; border-radius: 5px;"></div>', 'sent');
+                    validateReceipt(file);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                addMessage('📄 Comprovante PDF enviado', 'sent');
+                validateReceipt(file);
+            }
         }
         
-        if (numPhotos >= 100) {
-          await simulateTyping("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥");
-        } else {
-          await simulateTyping("Espero que tenha gostado das fotos, amor! Se quiser mais é só me chamar 😉");
+        async function validateReceipt(file) {
+            // Show typing indicator while processing
+            showTypingIndicator();
+            
+            try {
+                // In a real implementation, you would send the file to an OCR API
+                // For this example, we'll simulate OCR processing with a delay
+                
+                setTimeout(async () => {
+                    hideTypingIndicator();
+                    
+                    // Simulate OCR results (in a real app, you'd get this from the API)
+                    let ocrText = "";
+                    let isValid = false;
+                    
+                    if (file.name.includes("valid")) {
+                        // Simulate a valid receipt
+                        ocrText = `Antonio\nValor: R$ ${totalValue},00`;
+                        isValid = true;
+                    } else {
+                        // Simulate random text for invalid receipt
+                        ocrText = "Comprovante qualquer\nValor: R$ 50,00\nNome: João Silva";
+                    }
+                    
+                    // Check if the receipt is valid
+                    const validNames = ["Antonio", "Renimar", "Pinheiro", "Almeida"];
+                    const hasValidName = validNames.some(name => ocrText.includes(name));
+                    const hasValidValue = ocrText.includes(`R$ ${totalValue},`) || 
+                                        ocrText.includes(`R$ ${totalValue}.`);
+                    
+                    if (hasValidName && hasValidValue) {
+                        // Valid receipt
+                        addMessage('Comprovante validado, meu amor... 😈🔥\nAguarda só um pouquinho que já vou liberar suas fotinhas... 🤤❤️', 'received');
+                        
+                        // Deliver photos after delay
+                        setTimeout(() => {
+                            deliverPhotos(photoCount);
+                        }, 3000);
+                    } else {
+                        // Invalid receipt
+                        addMessage('Hmm... não consegui validar seu comprovante, amor 😢\nDá uma olhadinha se tá tudo certinho e me manda de novo, tá? 😘', 'received');
+                    }
+                    
+                    waitingForPayment = false;
+                }, 4000);
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Ocorreu um erro ao validar seu comprovante, amor... 😢\nPode tentar de novo? ❤️', 'received');
+                console.error('Error validating receipt:', error);
+            }
         }
-      }
-
-      function showComprovanteError() {
-        let errorMessage = '<div class="error-message">❌ Não consegui confirmar seu pagamento</div>';
-        errorMessage += '<p>Por favor, verifique se:</p>';
-        errorMessage += '<ul>';
-        errorMessage += `<li>Você enviou o comprovante do Pix para a chave <strong>${PIX_KEY}</strong> (CPF)</li>`;
-        errorMessage += `<li>O valor está correto: <strong>R$ ${expectedAmount.toFixed(2).replace('.', ',')}</strong></li>`;
-        errorMessage += '</ul>';
-        errorMessage += '<p>Se já conferiu tudo e ainda assim não foi validado, pode enviar novamente o comprovante?</p>';
-        errorMessage += `
-          <div class="comprovante-container">
-            <div class="upload-buttons">
-              <label for="uploadComprovanteFoto" class="upload-label">
-                <img src="camera.webp" alt="Enviar imagem" />
-                Enviar Comprovante em Foto
-              </label>
-              <label for="uploadComprovantePDF" class="upload-label">
-                <img src="pdf-icon.webp" alt="Enviar PDF" />
-                Enviar Comprovante em PDF
-              </label>
-            </div>
-            <input type="file" accept="image/*" id="uploadComprovanteFoto" style="display: none" />
-            <input type="file" accept=".pdf" id="uploadComprovantePDF" style="display: none" />
-          </div>
-        `;
         
-        appendMessage("bot", errorMessage);
+        function deliverPhotos(count) {
+            showTypingIndicator();
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                // Create photo grid
+                let photosHTML = '<div class="photo-grid">';
+                for (let i = 1; i <= count; i++) {
+                    const photoNum = (i % 100) || 100; // Cycle through 1-100 if count > 100
+                    photosHTML += `<img src="foto${photoNum}.webp" class="photo-item" onclick="openModal('foto${photoNum}.webp')">`;
+                }
+                photosHTML += '</div>';
+                
+                addMessage(`Aqui estão suas ${count} fotinhas, meu bem... aproveita bastante! 😈🔥❤️\n${photosHTML}`, 'received');
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 4000);
+        }
         
-        // Configurar novamente os listeners
-        comprovanteUploaded = false;
-        document.getElementById('uploadComprovanteFoto').addEventListener('change', function(e) {
-          if (!comprovanteUploaded) {
-            handleComprovanteUpload(e, 'image');
-            comprovanteUploaded = true;
-          }
-        });
-        
-        document.getElementById('uploadComprovantePDF').addEventListener('change', function(e) {
-          if (!comprovanteUploaded) {
-            handleComprovanteUpload(e, 'pdf');
-            comprovanteUploaded = true;
-          }
-        });
-      }
+        function openModal(src) {
+            modalImage.src = src;
+            photoModal.style.display = 'flex';
+        }
     </script>
 </body>
 </html>
