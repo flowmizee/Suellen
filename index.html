@@ -27,9 +27,9 @@
 
         /* Estilos globais para o corpo da página */
         html, body {
-            height: 100%; /* Garante que HTML e Body ocupem a altura total da viewport */
-            width: 100%; /* Garante que ocupe a largura total */
-            overflow: hidden; /* Evita que o body tenha scroll próprio */
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-light);
@@ -38,30 +38,30 @@
             align-items: center;
         }
 
-        /* Contêiner principal do chat - ocupa 100% da altura da viewport */
+        /* Contêiner principal do chat */
         .chat-container {
             width: 100%;
-            height: 100vh; /* Altura total da viewport, ajustada pelo JS em mobile */
-            max-width: 450px; /* Largura máxima para simular um celular */
-            margin: 0 auto; /* Centraliza o contêiner */
-            position: relative; /* Necessário para posicionamento absoluto dos filhos */
+            height: 100vh;
+            max-width: 450px;
+            margin: 0 auto;
+            position: relative;
             background-color: var(--bg-medium);
-            border-radius: 25px; /* Bordas arredondadas para o contêiner principal */
+            border-radius: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             display: flex;
-            flex-direction: column; /* Organiza os filhos em coluna */
-            overflow: hidden; /* Importante para que o conteúdo não vaze das bordas arredondadas */
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Cabeçalho do chat - não encolhe, sempre visível no topo */
+        /* Cabeçalho do chat */
         .chat-header {
             display: flex;
             align-items: center;
             padding: 15px 20px;
             background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            z-index: 10; /* Garante que fique acima de outros elementos */
-            flex-shrink: 0; /* Impede que o cabeçalho encolha */
+            z-index: 10;
+            flex-shrink: 0;
         }
 
         /* Imagem de perfil no cabeçalho */
@@ -74,7 +74,7 @@
             margin-right: 15px;
         }
 
-        /* Informações do cabeçalho (nome e status) */
+        /* Informações do cabeçalho */
         .header-info h2 {
             margin: 0;
             font-size: 1.2em;
@@ -88,17 +88,16 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        /* Área de exibição das mensagens - ocupa o espaço restante e é scrollable */
+        /* Área de mensagens */
         .chat-messages {
-            flex-grow: 1; /* Permite que ocupe o espaço restante */
-            min-height: 0; /* Importante para que o flex-grow funcione corretamente com overflow */
-            padding: 20px; /* Padding padrão para todos os lados */
-            overflow-y: auto; /* Adiciona scroll se as mensagens excederem a altura */
+            flex-grow: 1;
+            min-height: 0;
+            padding: 20px;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            scroll-behavior: smooth; /* Rolagem suave */
-            /* padding-bottom será ajustado via JS para acomodar a área de input/upload */
+            scroll-behavior: smooth;
         }
 
         /* Bolhas de mensagem */
@@ -115,15 +114,15 @@
         .message-bubble.user {
             background-color: var(--bubble-user);
             color: var(--text-light);
-            align-self: flex-end; /* Alinha a direita para mensagens do usuário */
-            border-bottom-right-radius: 5px; /* Detalhe no canto da bolha */
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
         }
 
         .message-bubble.suellen {
             background-color: var(--bubble-suellen);
             color: var(--text-dark);
-            align-self: flex-start; /* Alinha a esquerda para mensagens da Suellen */
-            border-bottom-left-radius: 5px; /* Detalhe no canto da bolha */
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
         }
 
         .message-bubble img {
@@ -132,17 +131,17 @@
             margin-top: 5px;
         }
 
-        /* Estilo para o indicador de digitação (bolha com 3 pontos) */
+        /* Indicador de digitação */
         .message-bubble.typing-indicator-bubble {
             background-color: var(--bubble-suellen);
             color: var(--text-dark);
             align-self: flex-start;
             border-bottom-left-radius: 5px;
-            padding: 10px 15px; /* Padding ligeiramente menor */
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            width: fit-content; /* Ajusta a largura ao conteúdo */
-            opacity: 1; /* Always visible when added */
+            width: fit-content;
+            opacity: 1;
         }
 
         .typing-dots {
@@ -154,41 +153,36 @@
             display: inline-block;
             width: 8px;
             height: 8px;
-            background-color: rgba(0, 0, 0, 0.5); /* Darker dots for light bubble */
+            background-color: rgba(0, 0, 0, 0.5);
             border-radius: 50%;
             margin: 0 2px;
-            animation: bounce 1.4s infinite ease-in-out both; /* Animação de "bounce" */
+            animation: bounce 1.4s infinite ease-in-out both;
         }
 
-        /* Atrasos para a animação dos pontos */
-        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0s; }
-
-        /* Keyframes para a animação de "bounce" */
+        /* Animação dos pontos */
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
 
-        /* Área de input do chat - posicionada absolutamente na parte inferior */
+        /* Área de input */
         .chat-input-area {
             display: flex;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: absolute; /* Posicionada absolutamente dentro do chat-container */
-            bottom: 0; /* Fixa na parte inferior */
+            position: absolute;
+            bottom: 0;
             left: 0;
             right: 0;
             width: 100%;
-            z-index: 10; /* Garante que fique acima de outros elementos */
-            flex-shrink: 0; /* Impede que a área de input encolha */
+            z-index: 10;
+            flex-shrink: 0;
         }
 
-        /* Campo de input de texto */
+        /* Campo de input */
         .chat-input {
-            flex-grow: 1; /* Ocupa o máximo de espaço possível */
+            flex-grow: 1;
             padding: 12px 18px;
             border: none;
             border-radius: 25px;
@@ -224,21 +218,20 @@
             background-color: var(--accent-red);
         }
 
-        /* Estilos para a nova área de upload de PIX - posicionada absolutamente */
+        /* Área de upload de PIX */
         .pix-upload-area {
-            display: none; /* Escondido por padrão */
+            display: none;
             flex-direction: column;
             align-items: center;
             padding: 15px 20px;
             background-color: var(--bg-medium);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: absolute; /* Posicionada absolutamente dentro do chat-container */
+            position: absolute;
             left: 0;
             right: 0;
             width: 100%;
-            z-index: 9; /* Abaixo do chat-input-area */
+            z-index: 9;
             gap: 10px;
-            /* bottom será ajustado via JS para ficar acima da chat-input-area */
         }
 
         .pix-preview-container {
@@ -258,6 +251,7 @@
             border-radius: 8px;
             object-fit: contain;
         }
+
         #pdf-preview-canvas {
             max-width: 100%;
             max-height: 150px;
@@ -270,7 +264,7 @@
             display: none;
         }
 
-        /* Estilos para os botões de upload de comprovante (Foto/PDF) */
+        /* Botões de upload */
         .pix-upload-area .upload-type-button {
             width: 100%;
             border-radius: 25px;
@@ -298,7 +292,7 @@
             margin-top: 5px;
         }
 
-        /* Estilos para o botão personalizado de "Ver Fotos / Enviar Comprovante" */
+        /* Botão de ação personalizado */
         .custom-action-button {
             background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-pink) 100%);
             color: var(--text-light);
@@ -310,8 +304,8 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             margin-top: 10px;
-            align-self: center; /* Centraliza o botão */
-            width: fit-content; /* Ajusta a largura ao conteúdo */
+            align-self: center;
+            width: fit-content;
         }
 
         .custom-action-button:hover {
@@ -319,11 +313,11 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
         }
 
-        /* Botões de anexo no campo de mensagem - AJUSTE DE POSICIONAMENTO */
+        /* Botões de anexo */
         .attachment-buttons {
             position: absolute;
-            right: 85px; /* Movido um pouco para a esquerda */
-            bottom: 18px; /* Movido levemente para cima */
+            right: 85px;
+            bottom: 18px;
             display: flex;
             gap: 5px;
         }
@@ -343,14 +337,14 @@
             object-fit: contain;
         }
 
-        /* Responsividade para telas menores (celulares) */
+        /* Responsividade */
         @media (max-width: 600px) {
             .chat-container {
-                border-radius: 0; /* Remove bordas arredondadas em tela cheia */
-                max-width: 100%; /* Garante que ocupe a largura total */
+                border-radius: 0;
+                max-width: 100%;
             }
             .chat-header {
-                border-radius: 0; /* Remove bordas arredondadas no cabeçalho */
+                border-radius: 0;
             }
         }
     </style>
@@ -358,7 +352,6 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
@@ -370,7 +363,7 @@
             <!-- Mensagens serão inseridas aqui -->
         </div>
 
-        <!-- Nova seção para upload de comprovante PIX -->
+        <!-- Área de upload de comprovante PIX -->
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
                 <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
@@ -426,7 +419,7 @@
         const sendPhotoButton = document.getElementById('send-photo-button');
 
         let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
         let photosSentCount = 0;
@@ -436,56 +429,34 @@
         let customActionButton = null;
         let tesseractWorker = null;
 
-        /**
-         * @function adjustChatContainerHeight
-         * @description Ajusta a altura do chat-container para a altura real da viewport,
-         * o que é crucial para lidar com o teclado virtual em dispositivos móveis.
-         */
         function adjustChatContainerHeight() {
             chatContainer.style.height = `${window.innerHeight}px`;
-            // Reajusta o padding das mensagens e a posição da área de upload após a altura do container ser definida
             adjustChatMessagesPadding();
         }
 
-        /**
-         * @function adjustChatMessagesPadding
-         * @description Ajusta o padding inferior da área de mensagens e a posição da área de upload PIX
-         * para garantir que o cabeçalho, a área de input e a área de upload (quando visível)
-         * estejam sempre visíveis e o conteúdo das mensagens não seja ocultado por eles.
-         */
         function adjustChatMessagesPadding() {
-            // A altura do cabeçalho e da área de input são fixas (flex-shrink: 0)
             const headerHeight = chatHeader.offsetHeight;
             const inputAreaHeight = chatInputArea.offsetHeight;
 
-            let currentBottomPadding = inputAreaHeight + 20; // Padding base para a área de input
+            let currentBottomPadding = inputAreaHeight + 20;
 
-            // Se a área de upload PIX estiver visível, adiciona sua altura ao padding inferior
-            // e posiciona-a logo acima da área de input.
             if (pixUploadArea.style.display === 'flex') {
                 const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
                 currentBottomPadding += pixAreaVisibleHeight;
-                // Posiciona a área de upload exatamente acima da área de input
                 pixUploadArea.style.bottom = `${inputAreaHeight}px`;
             } else {
-                // Garante que a área de upload não interfira no layout quando oculta
                 pixUploadArea.style.bottom = `0px`;
             }
             
             chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        /**
-         * @function initializeTesseractWorker
-         * @description Inicializa o worker do Tesseract.js para OCR.
-         * Carrega o idioma português ('por') para reconhecimento de texto.
-         */
         async function initializeTesseractWorker() {
             if (!tesseractWorker) {
                 ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
                 try {
-                    tesseractWorker = await Tesseract.createWorker('por'); // 'por' para português
+                    tesseractWorker = await Tesseract.createWorker('por');
                     ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
                 } catch (error) {
                     console.error('Erro ao carregar validador:', error);
@@ -494,17 +465,6 @@
             }
         }
 
-        /**
-         * @function addMessage
-         * @description Adiciona uma nova bolha de mensagem ao chat.
-         * Suporta mensagens de texto, imagens e pré-visualizações de PDF.
-         * @param {string} text - O texto da mensagem.
-         * @param {string} sender - O remetente da mensagem ('user' ou 'suellen').
-         * @param {boolean} isImage - True se a mensagem for uma imagem.
-         * @param {string} imageUrl - URL da imagem (se isImage for true).
-         * @param {boolean} isPdfPreview - True se a mensagem for uma pré-visualização de PDF.
-         * @param {ArrayBuffer} pdfFile - O ArrayBuffer do arquivo PDF (se isPdfPreview for true).
-         */
         async function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false, pdfFile = null) {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', sender);
@@ -521,13 +481,12 @@
                 messageBubble.appendChild(canvas);
 
                 try {
-                    const loadingTask = pdfjsLib.getDocument({data: pdfFile}); // Passa o ArrayBuffer
+                    const loadingTask = pdfjsLib.getDocument({data: pdfFile});
                     const pdf = await loadingTask.promise;
                     const page = await pdf.getPage(1);
                     const viewport = page.getViewport({ scale: 1.0 });
 
-                    // Ajusta o canvas para a largura máxima da bolha, mantendo a proporção
-                    const maxWidth = chatMessages.offsetWidth * 0.7; // 70% da largura do chatMessages
+                    const maxWidth = chatMessages.offsetWidth * 0.7;
                     const scale = maxWidth / viewport.width;
                     const scaledViewport = page.getViewport({ scale: scale });
 
@@ -555,21 +514,16 @@
                     `;
                 }
             } else {
-                // Substitui markdown bold (**) por HTML bold (<strong>) para exibição
                 messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             }
 
             chatMessages.appendChild(messageBubble);
-            adjustChatMessagesPadding(); // Ajusta o padding após adicionar nova mensagem
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
+            adjustChatMessagesPadding();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        /**
-         * @function addTypingIndicator
-         * @description Adiciona a bolha de "digitando..." ao chat e atualiza o status do cabeçalho.
-         */
         function addTypingIndicator() {
-            if (typingIndicatorElement) return; // Evita adicionar múltiplos indicadores
+            if (typingIndicatorElement) return;
 
             typingIndicatorElement = document.createElement('div');
             typingIndicatorElement.classList.add('message-bubble', 'suellen', 'typing-indicator-bubble');
@@ -581,32 +535,22 @@
                 </div>
             `;
             chatMessages.appendChild(typingIndicatorElement);
-            adjustChatMessagesPadding(); // Ajusta o padding após adicionar indicador
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o indicador
-            statusText.textContent = 'digitando...'; // Atualiza o status do cabeçalho
+            adjustChatMessagesPadding();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            statusText.textContent = 'digitando...';
         }
 
-        /**
-         * @function removeTypingIndicator
-         * @description Remove a bolha de "digitando..." do chat e reseta o status do cabeçalho.
-         */
         function removeTypingIndicator() {
             if (typingIndicatorElement) {
                 typingIndicatorElement.remove();
                 typingIndicatorElement = null;
             }
-            statusText.textContent = 'online'; // Reseta o status do cabeçalho
-            adjustChatMessagesPadding(); // Ajusta o padding após remover indicador
+            statusText.textContent = 'online';
+            adjustChatMessagesPadding();
         }
 
-        /**
-         * @function addCustomActionButton
-         * @description Adiciona um botão personalizado ao chat.
-         * @param {string} text - O texto do botão.
-         * @param {function} onClickHandler - A função a ser executada ao clicar no botão.
-         */
         function addCustomActionButton(text, onClickHandler) {
-            if (customActionButton) { // Remove o botão existente se houver
+            if (customActionButton) {
                 customActionButton.remove();
             }
             customActionButton = document.createElement('button');
@@ -614,37 +558,23 @@
             customActionButton.textContent = text;
             customActionButton.addEventListener('click', onClickHandler);
             chatMessages.appendChild(customActionButton);
-            adjustChatMessagesPadding(); // Ajusta o padding para o botão
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para o botão
+            adjustChatMessagesPadding();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        /**
-         * @function removeCustomActionButton
-         * @description Remove o botão personalizado do chat.
-         */
         function removeCustomActionButton() {
             if (customActionButton) {
                 customActionButton.remove();
                 customActionButton = null;
             }
-            adjustChatMessagesPadding(); // Ajusta o padding após remover o botão
+            adjustChatMessagesPadding();
         }
 
-        /**
-         * @function processUserMessage
-         * @description Processa a mensagem enviada pelo usuário, adiciona ao chat,
-         * chama a API Gemini para obter a resposta da Suellen e lida com a lógica de venda de fotos.
-         * @param {string} message - A mensagem digitada pelo usuário.
-         */
         async function processUserMessage(message) {
             addMessage(message, 'user');
-            // Adiciona a mensagem do usuário ao histórico
             chatHistory.push({ role: "user", parts: [{ text: message }] });
-
-            // Remove o botão personalizado se ele estiver visível (caso o usuário digite algo em vez de clicar)
             removeCustomActionButton();
 
-            // Verifica se a mensagem contém uma quantidade de fotos solicitada
             const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
             let requestedQuantity = 0;
 
@@ -675,55 +605,47 @@
                 }
 
                 if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
-                    // QUANTIDADE VÁLIDA - Prossegue com as mensagens PIX pré-programadas
                     expectedPaymentAmount = (requestedQuantity / 5) * 10;
                     
-                    // Envia as 3 mensagens PIX pré-programadas com atraso e indicador de digitação
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // Atraso ANTES do indicador
+                    await new Promise(resolve => setTimeout(resolve, 3000));
                     addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000)); // Delay da digitação
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
                     const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
                     addMessage(pixMsg1, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
                     
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // Atraso ANTES do indicador
+                    await new Promise(resolve => setTimeout(resolve, 3000));
                     addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000)); // Delay da digitação
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
-                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`; // Chave PIX fixa
+                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
                     addMessage(pixMsg2, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
 
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // Atraso ANTES do indicador
+                    await new Promise(resolve => setTimeout(resolve, 3000));
                     addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000)); // Delay da digitação
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 3000));
                     removeTypingIndicator();
-                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`; // Mensagem do assessor
+                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
                     addMessage(pixMsg3, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
                     
-                    // Mostra o botão personalizado para upload do comprovante
                     addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                        chatInputArea.style.display = 'none'; // Esconde a área de input de texto
-                        pixUploadArea.style.display = 'flex'; // Mostra a área de upload
-                        waitingForComprovante = true; // Ativa o estado de espera por comprovante
-                        adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
-                        initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                        chatInputArea.style.display = 'none';
+                        pixUploadArea.style.display = 'flex';
+                        waitingForComprovante = true;
+                        adjustChatMessagesPadding();
+                        initializeTesseractWorker();
                     });
 
-                    return; // Encerra a função aqui para não processar a resposta da IA
+                    return;
                 }
             }
 
-            // Se não for uma solicitação de quantidade válida, processa normalmente com a IA
-            // Simula o atraso antes de Suellen "começar a digitar" (5 segundos)
             await new Promise(resolve => setTimeout(resolve, 5000));
-
-            // Adiciona o indicador de digitação após o atraso inicial
             addTypingIndicator();
 
-            // **PROMPT DA PERSONA APRIMORADO E REFORÇADO**
             const personaPrompt = `
             Você é Suellen Rocha. Sua identidade é:
             - Mulher jovem, sensual, misteriosa e envolvente.
@@ -753,7 +675,6 @@
             - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
             `;
 
-            // Constrói o payload para sempre incluir o prompt da persona no início
             const payload = {
                 contents: [
                     {
@@ -795,7 +716,6 @@
             }
         }
 
-        // Lidar com a seleção do arquivo de comprovante e pré-visualização, e iniciar OCR
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) {
@@ -806,9 +726,8 @@
             }
 
             const reader = new FileReader();
-            let fileDataForOCR = null; // Initialize as null
+            let fileDataForOCR = null;
 
-            // Lógica para adicionar a pré-visualização do comprovante no chat como uma mensagem do usuário
             if (file.type.startsWith('image/')) {
                 reader.onload = async (e) => {
                     await addMessage('', 'user', true, e.target.result);
@@ -821,22 +740,20 @@
             } else if (file.type === 'application/pdf') {
                 reader.onload = async (e) => {
                     const pdfData = e.target.result;
-                    await addMessage('', 'user', false, '', true, pdfData); // Add PDF preview to chat bubble
+                    await addMessage('', 'user', false, '', true, pdfData);
 
                     receiptPreview.style.display = 'none';
-                    pdfPreviewCanvas.style.display = 'block'; // Ensure the OCR canvas is visible (even if off-screen)
+                    pdfPreviewCanvas.style.display = 'block';
 
                     try {
                         const loadingTask = pdfjsLib.getDocument({data: pdfData});
                         const pdf = await loadingTask.promise;
-                        const page = await pdf.getPage(1); // Get the first page
+                        const page = await pdf.getPage(1);
 
-                        // Clear the canvas before drawing a new PDF
                         const ctx = pdfPreviewCanvas.getContext('2d');
                         ctx.clearRect(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
 
-                        // Use a higher scale for OCR accuracy
-                        const viewport = page.getViewport({ scale: 3.0 }); // Increased scale for better OCR
+                        const viewport = page.getViewport({ scale: 3.0 });
                         pdfPreviewCanvas.height = viewport.height;
                         pdfPreviewCanvas.width = viewport.width;
 
@@ -846,36 +763,32 @@
                         };
                         await page.render(renderContext).promise;
 
-                        // Add a small delay to ensure the canvas is fully rendered
-                        await new Promise(resolve => setTimeout(resolve, 1000)); // Increased delay for rendering
+                        await new Promise(resolve => setTimeout(resolve, 1000));
 
-                        // Convert canvas to image data for Tesseract
                         const imageData = ctx.getImageData(0, 0, pdfPreviewCanvas.width, pdfPreviewCanvas.height);
                         fileDataForOCR = imageData;
                     } catch (pdfError) {
                         console.error('Erro ao renderizar PDF para OCR:', pdfError);
                         ocrStatusMessage.textContent = 'Erro ao carregar PDF para validação.';
-                        fileDataForOCR = null; // Ensure no invalid data is passed to Tesseract
+                        fileDataForOCR = null;
                         removeTypingIndicator();
                         addMessage("Não consegui processar o comprovante em PDF, amor. Pode me mandar um PDF mais simples ou uma foto? 💋", 'suellen');
-                        // Re-enable buttons and hide upload area
                         uploadPhotoButton.disabled = false;
                         uploadPdfButton.disabled = false;
                         receiptFileInput.value = '';
                         pixUploadArea.style.display = 'none';
                         chatInputArea.style.display = 'flex';
                         adjustChatMessagesPadding();
-                        return; // Exit early if PDF rendering fails
+                        return;
                     }
                 };
                 reader.readAsArrayBuffer(file);
             }
 
-            await new Promise(resolve => reader.onloadend = resolve); // Wait for file to be read
+            await new Promise(resolve => reader.onloadend = resolve);
 
-            // If PDF rendering failed or no file data, stop processing and inform user
             if (!fileDataForOCR) {
-                return; // Already handled error message and UI reset in PDF rendering catch block
+                return;
             }
             
             addTypingIndicator();
@@ -886,7 +799,6 @@
                 if (!tesseractWorker) {
                     removeTypingIndicator();
                     addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
-                    // Re-enable buttons and hide upload area
                     uploadPhotoButton.disabled = false;
                     uploadPdfButton.disabled = false;
                     receiptFileInput.value = '';
@@ -906,11 +818,10 @@
                 if (file.type.startsWith('image/')) {
                     result = await tesseractWorker.recognize(fileDataForOCR);
                 } else if (file.type === 'application/pdf') {
-                    // For PDF, we use the canvas image data directly
                     result = await tesseractWorker.recognize(fileDataForOCR);
                 }
                 
-                console.log('DEBUG - Extracted Text:', result.data.text); // DEBUG: Log extracted text
+                console.log('DEBUG - Extracted Text:', result.data.text);
                 
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 removeTypingIndicator();
@@ -924,14 +835,12 @@
                 uploadPdfButton.disabled = false;
                 receiptFileInput.value = '';
                 
-                // Return to main chat view
                 pixUploadArea.style.display = 'none';
                 chatInputArea.style.display = 'flex';
                 adjustChatMessagesPadding();
             }
         });
 
-        // Event listeners para os botões de upload
         uploadPhotoButton.addEventListener('click', () => {
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
@@ -942,7 +851,6 @@
             receiptFileInput.click();
         });
 
-        // Event listeners para os botões de anexo
         attachButton.addEventListener('click', () => {
             receiptFileInput.accept = 'image/*,application/pdf';
             receiptFileInput.click();
@@ -953,19 +861,13 @@
             receiptFileInput.click();
         });
 
-        /**
-         * @function handleComprovante
-         * @description Lida com o texto extraído do comprovante para validar o pagamento.
-         * @param {string} extractedText - O texto extraído do comprovante via OCR.
-         */
         function handleComprovante(extractedText) {
             const normalizedText = extractedText.toLowerCase()
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/[^a-z0-9\s.,]/g, "");
 
-            console.log('DEBUG - Normalized Text:', normalizedText); // DEBUG
+            console.log('DEBUG - Normalized Text:', normalizedText);
 
-            // Verifica se o texto contém a chave PIX ou nome do destinatário
             const pixKeyFound = normalizedText.includes('98981420070') || 
                                normalizedText.includes('98981420070') ||
                                normalizedText.includes('antonio') || 
@@ -973,7 +875,6 @@
                                normalizedText.includes('pinheiro') || 
                                normalizedText.includes('almeida');
 
-            // Extrai todos os valores monetários do texto
             const amountPattern = /(?:r\$\s*|rs\s*)?(\d{1,3}(?:[.,]\d{2})?)/g;
             let extractedAmount = 0;
             let match;
@@ -989,21 +890,18 @@
             extractedAmount = Math.round(extractedAmount * 100) / 100;
             expectedPaymentAmount = Math.round(expectedPaymentAmount * 100) / 100;
 
-            // Verifica se o valor extraído está dentro de uma margem de 10% do valor esperado
-            // Isso permite pequenas variações devido a taxas ou arredondamentos
             const isAmountValid = Math.abs(extractedAmount - expectedPaymentAmount) <= (expectedPaymentAmount * 0.1);
             
-            console.log('DEBUG - Extracted Amount:', extractedAmount); // DEBUG
-            console.log('DEBUG - Expected Amount:', expectedPaymentAmount); // DEBUG
-            console.log('DEBUG - PIX Key or Name Found:', pixKeyFound); // DEBUG
-            console.log('DEBUG - Is Amount Valid:', isAmountValid); // DEBUG
+            console.log('DEBUG - Extracted Amount:', extractedAmount);
+            console.log('DEBUG - Expected Amount:', expectedPaymentAmount);
+            console.log('DEBUG - PIX Key or Name Found:', pixKeyFound);
+            console.log('DEBUG - Is Amount Valid:', isAmountValid);
 
             if ((isAmountValid || pixKeyFound) && extractedAmount > 0) {
                 addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                 sendPhotosWithDelay(expectedPaymentAmount);
                 ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
             } else {
-                // Modified error message: more affectionate and generic
                 let errorMessage = "Hmm... parece que algo não tá certo aqui, viu? 💋 Confere o comprovante pra mim, amor?";
                 
                 if (extractedAmount > 0 && extractedAmount !== expectedPaymentAmount) {
@@ -1014,22 +912,16 @@
                 
                 addMessage(errorMessage, 'suellen');
                 ocrStatusMessage.textContent = 'Validação falhou. Por favor, tente novamente.';
-                // Always show the custom action button to re-upload
                 addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                    chatInputArea.style.display = 'none'; // Esconde a área de input de texto
-                    pixUploadArea.style.display = 'flex'; // Mostra a área de upload
-                    waitingForComprovante = true; // Ativa o estado de espera por comprovante
-                    adjustChatMessagesPadding(); // Ajusta o padding para a área de upload
-                    initializeTesseractWorker(); // Inicializa o Tesseract quando o pagamento é solicitado
+                    chatInputArea.style.display = 'none';
+                    pixUploadArea.style.display = 'flex';
+                    waitingForComprovante = true;
+                    adjustChatMessagesPadding();
+                    initializeTesseractWorker();
                 });
             }
         }
 
-        /**
-         * @function sendPhotosWithDelay
-         * @description Envia as fotos para o chat com base no valor pago, garantindo fotos únicas.
-         * @param {number} amountPaid - O valor do pagamento PIX confirmado.
-         */
         async function sendPhotosWithDelay(amountPaid) {
             const numPhotos = (amountPaid / 10) * 5;
             const photosToSendThisBatch = Math.min(numPhotos, 100 - photosSentCount);
@@ -1085,7 +977,6 @@
             }
         });
 
-        // Saudação inicial da Suellen ao carregar a página
         window.onload = () => {
             adjustChatContainerHeight();
 
