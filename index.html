@@ -382,249 +382,257 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        const chatContainer = document.querySelector('.chat-container');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-        const statusText = document.getElementById('status-text');
-        const chatInputArea = document.getElementById('chat-input-area');
-        const chatHeader = document.querySelector('.chat-header');
+const chatContainer = document.querySelector('.chat-container');
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendButton = document.getElementById('send-button');
+const statusText = document.getElementById('status-text');
+const chatInputArea = document.getElementById('chat-input-area');
+const chatHeader = document.querySelector('.chat-header');
 
-        const pixUploadArea = document.getElementById('pix-upload-area');
-        const receiptFileInput = document.getElementById('receipt-file-input');
-        const receiptPreview = document.getElementById('receipt-preview');
-        const pdfPreviewCanvas = document.getElementById('pdf-preview-canvas');
-        const uploadPhotoButton = document.getElementById('upload-photo-button');
-        const uploadPdfButton = document.getElementById('upload-pdf-button');
-        const ocrStatusMessage = document.getElementById('ocr-status-message');
-        const attachButton = document.getElementById('attach-button');
-        const sendPhotoButton = document.getElementById('send-photo-button');
+const pixUploadArea = document.getElementById('pix-upload-area');
+const receiptFileInput = document.getElementById('receipt-file-input');
+const receiptPreview = document.getElementById('receipt-preview');
+const pdfPreviewCanvas = document.getElementById('pdf-preview-canvas');
+const uploadPhotoButton = document.getElementById('upload-photo-button');
+const uploadPdfButton = document.getElementById('upload-pdf-button');
+const ocrStatusMessage = document.getElementById('ocr-status-message');
+const attachButton = document.getElementById('attach-button');
+const sendPhotoButton = document.getElementById('send-photo-button');
 
-        let chatHistory = [];
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+let chatHistory = [];
+const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-        let photosSentCount = 0;
-        let expectedPaymentAmount = 0;
-        let typingIndicatorElement = null;
-        let customActionButton = null;
-        let tesseractWorker = null;
+let photosSentCount = 0;
+let expectedPaymentAmount = 0;
+let typingIndicatorElement = null;
+let customActionButton = null;
+let tesseractWorker = null;
 
-        function adjustChatContainerHeight() {
-            chatContainer.style.height = `${window.innerHeight}px`;
-            adjustChatMessagesPadding();
+function adjustChatContainerHeight() {
+    chatContainer.style.height = `${window.innerHeight}px`;
+    adjustChatMessagesPadding();
+}
+
+function adjustChatMessagesPadding() {
+    const headerHeight = chatHeader.offsetHeight;
+    const inputAreaHeight = chatInputArea.offsetHeight;
+
+    let currentBottomPadding = inputAreaHeight + 20;
+
+    if (pixUploadArea.style.display === 'flex') {
+        const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
+        currentBottomPadding += pixAreaVisibleHeight;
+        pixUploadArea.style.bottom = `${inputAreaHeight}px`;
+    } else {
+        pixUploadArea.style.bottom = `0px`;
+    }
+
+    chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function initializeTesseractWorker() {
+    if (!tesseractWorker) {
+        ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
+        try {
+            tesseractWorker = await Tesseract.createWorker('por');
+            ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
+        } catch (error) {
+            console.error('Erro ao carregar validador:', error);
+            ocrStatusMessage.textContent = 'Erro ao carregar validador. Tente novamente.';
+        }
+    }
+}
+
+async function processPdfComprovante(pdfFile) {
+    try {
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let textoCompleto = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const textoPagina = content.items.map(item => item.str).join(' ');
+            textoCompleto += textoPagina + '\n';
         }
 
-        function adjustChatMessagesPadding() {
-            const headerHeight = chatHeader.offsetHeight;
-            const inputAreaHeight = chatInputArea.offsetHeight;
+        const texto = textoCompleto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-            let currentBottomPadding = inputAreaHeight + 20;
+        const nomes = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+        const nomeValido = nomes.some(nome => texto.includes(nome));
 
-            if (pixUploadArea.style.display === 'flex') {
-                const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
-                currentBottomPadding += pixAreaVisibleHeight;
-                pixUploadArea.style.bottom = `${inputAreaHeight}px`;
-            } else {
-                pixUploadArea.style.bottom = `0px`;
+        let valorValido = false;
+        for (let i = 10; i <= 100; i += 5) {
+            const regex = new RegExp(`r\\$\\s*0*${i}[,.]?00`);
+            if (regex.test(texto)) {
+                valorValido = true;
+                break;
             }
-            
-            chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        async function initializeTesseractWorker() {
-            if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
-                try {
-                    tesseractWorker = await Tesseract.createWorker('por');
-                    ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
-                } catch (error) {
-                    console.error('Erro ao carregar validador:', error);
-                    ocrStatusMessage.textContent = 'Erro ao carregar validador. Tente novamente.';
-                }
+        return nomeValido && valorValido;
+    } catch (error) {
+        console.error('Erro ao processar PDF:', error);
+        return false;
+    }
+}
+
+async function processImageComprovante(imageFile) {
+    if (!tesseractWorker) return false;
+
+    try {
+        const { data } = await tesseractWorker.recognize(imageFile);
+        const texto = data.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+        const nomes = ['antonio', 'renimar', 'pinheiro', 'almeida'];
+        const nomeValido = nomes.some(nome => texto.includes(nome));
+
+        let valorValido = false;
+        for (let i = 10; i <= 100; i += 5) {
+            const regex = new RegExp(`r\\$\\s*0*${i}[,.]?00`);
+            if (regex.test(texto)) {
+                valorValido = true;
+                break;
             }
         }
 
-        async function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false, pdfFile = null) {
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('message-bubble', sender);
+        return nomeValido && valorValido;
+    } catch (err) {
+        console.error("Erro no OCR da imagem:", err);
+        return false;
+    }
+}
 
-            if (isImage) {
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.alt = `Foto de Suellen ${photosSentCount}`;
-                messageBubble.appendChild(img);
-            } else if (isPdfPreview && pdfFile) {
-                const canvas = document.createElement('canvas');
-                canvas.style.maxWidth = '100%';
-                canvas.style.height = 'auto';
-                messageBubble.appendChild(canvas);
+receiptFileInput.addEventListener('change', async () => {
+    const file = receiptFileInput.files[0];
+    if (!file) return;
 
-                try {
-                    const loadingTask = pdfjsLib.getDocument({data: pdfFile});
-                    const pdf = await loadingTask.promise;
-                    const page = await pdf.getPage(1);
-                    const viewport = page.getViewport({ scale: 1.0 });
+    addMessage("🕵️‍♀️ Validando seu comprovante...", "suellen");
 
-                    const maxWidth = chatMessages.offsetWidth * 0.7;
-                    const scale = maxWidth / viewport.width;
-                    const scaledViewport = page.getViewport({ scale: scale });
+    let validado = false;
 
-                    canvas.height = scaledViewport.height;
-                    canvas.width = scaledViewport.width;
+    if (file.type === 'application/pdf') {
+        validado = await processPdfComprovante(file);
+    } else if (file.type.startsWith('image/')) {
+        validado = await processImageComprovante(file);
+    }
 
-                    const renderContext = {
-                        canvasContext: canvas.getContext('2d'),
-                        viewport: scaledViewport
-                    };
-                    await page.render(renderContext).promise;
-                } catch (error) {
-                    console.error('Erro ao renderizar PDF:', error);
-                    messageBubble.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
-                                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
-                                <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-                                <path d="M10 9H8"/>
-                                <path d="M16 13H8"/>
-                                <path d="M16 17H8"/>
-                            </svg>
-                            <span>Erro ao carregar PDF.</span>
-                        </div>
-                    `;
-                }
-            } else {
-                messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            }
+    if (validado) {
+        addMessage("✅ Comprovante validado com sucesso! Vou te mandar tudo agora... 🔥", "suellen");
+        // aqui você pode liberar as fotos ou acionar envio
+    } else {
+        addMessage("❌ Comprovante inválido. O nome ou valor está incorreto. Tente novamente.", "suellen");
+    }
+});
 
-            chatMessages.appendChild(messageBubble);
-            adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+async function addMessage(text, sender, isImage = false, imageUrl = '', isPdfPreview = false, pdfFile = null) {
+    const messageBubble = document.createElement('div');
+    messageBubble.classList.add('message-bubble', sender);
 
-        function addTypingIndicator() {
-            if (typingIndicatorElement) return;
+    if (isImage) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Foto de Suellen ${photosSentCount}`;
+        messageBubble.appendChild(img);
+    } else if (isPdfPreview && pdfFile) {
+        const canvas = document.createElement('canvas');
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+        messageBubble.appendChild(canvas);
 
-            typingIndicatorElement = document.createElement('div');
-            typingIndicatorElement.classList.add('message-bubble', 'suellen', 'typing-indicator-bubble');
-            typingIndicatorElement.innerHTML = `
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+        try {
+            const loadingTask = pdfjsLib.getDocument({ data: pdfFile });
+            const pdf = await loadingTask.promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1.0 });
+
+            const maxWidth = chatMessages.offsetWidth * 0.7;
+            const scale = maxWidth / viewport.width;
+            const scaledViewport = page.getViewport({ scale: scale });
+
+            canvas.height = scaledViewport.height;
+            canvas.width = scaledViewport.width;
+
+            const renderContext = {
+                canvasContext: canvas.getContext('2d'),
+                viewport: scaledViewport
+            };
+            await page.render(renderContext).promise;
+        } catch (error) {
+            console.error('Erro ao renderizar PDF:', error);
+            messageBubble.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
+                        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                        <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                        <path d="M10 9H8"/>
+                        <path d="M16 13H8"/>
+                        <path d="M16 17H8"/>
+                    </svg>
+                    <span>Erro ao carregar PDF.</span>
                 </div>
             `;
-            chatMessages.appendChild(typingIndicatorElement);
-            adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            statusText.textContent = 'digitando...';
+        }
+    } else {
+        messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    chatMessages.appendChild(messageBubble);
+    adjustChatMessagesPadding();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+    if (typingIndicatorElement) return;
+
+    typingIndicatorElement = document.createElement('div');
+    typingIndicatorElement.classList.add('message-bubble', 'suellen', 'typing-indicator-bubble');
+    typingIndicatorElement.innerHTML = `
+        <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+    chatMessages.appendChild(typingIndicatorElement);
+    adjustChatMessagesPadding();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    statusText.textContent = 'digitando...';
+}
+
+function removeTypingIndicator() {
+    if (typingIndicatorElement) {
+        typingIndicatorElement.remove();
+        typingIndicatorElement = null;
+    }
+    statusText.textContent = 'online';
+    adjustChatMessagesPadding();
+}
+
+function addCustomActionButton(text, onClickHandler) {
+    if (customActionButton) {
+        customActionButton.remove();
+    }
+    customActionButton = document.createElement('button');
+    customActionButton.classList.add('custom-action-button');
+    customActionButton.textContent = text;
+    customActionButton.addEventListener('click', onClickHandler);
+    chatMessages.appendChild(customActionButton);
+    adjustChatMessagesPadding();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeCustomActionButton() {
+    if (customActionButton) {
+        customActionButton.remove();
+        customActionButton = null;
+    }
+    adjustChatMessagesPadding();
         }
 
-        function removeTypingIndicator() {
-            if (typingIndicatorElement) {
-                typingIndicatorElement.remove();
-                typingIndicatorElement = null;
-            }
-            statusText.textContent = 'online';
-            adjustChatMessagesPadding();
-        }
-
-        function addCustomActionButton(text, onClickHandler) {
-            if (customActionButton) {
-                customActionButton.remove();
-            }
-            customActionButton = document.createElement('button');
-            customActionButton.classList.add('custom-action-button');
-            customActionButton.textContent = text;
-            customActionButton.addEventListener('click', onClickHandler);
-            chatMessages.appendChild(customActionButton);
-            adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function removeCustomActionButton() {
-            if (customActionButton) {
-                customActionButton.remove();
-                customActionButton = null;
-            }
-            adjustChatMessagesPadding();
-        }
-
-        async function processUserMessage(message) {
-            addMessage(message, 'user');
-            chatHistory.push({ role: "user", parts: [{ text: message }] });
-            removeCustomActionButton();
-
-            const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
-            let requestedQuantity = 0;
-
-            if (quantityMatch) {
-                const numText = quantityMatch[1] ? quantityMatch[1].toLowerCase() : quantityMatch[0].toLowerCase();
-                switch (numText) {
-                    case 'cinco': requestedQuantity = 5; break;
-                    case 'dez': requestedQuantity = 10; break;
-                    case 'quinze': requestedQuantity = 15; break;
-                    case 'vinte': requestedQuantity = 20; break;
-                    case 'vinte e cinco': requestedQuantity = 25; break;
-                    case 'trinta': requestedQuantity = 30; break;
-                    case 'trinta e cinco': requestedQuantity = 35; break;
-                    case 'quarenta': requestedQuantity = 40; break;
-                    case 'quarenta e cinco': requestedQuantity = 45; break;
-                    case 'cinquenta': requestedQuantity = 50; break;
-                    case 'cinquenta e cinco': requestedQuantity = 55; break;
-                    case 'sessenta': requestedQuantity = 60; break;
-                    case 'sessenta e cinco': requestedQuantity = 65; break;
-                    case 'setenta': requestedQuantity = 70; break;
-                    case 'setenta e cinco': requestedQuantity = 75; break;
-                    case 'oitenta': requestedQuantity = 80; break;
-                    case 'oitenta e cinco': requestedQuantity = 85; break;
-                    case 'noventa': requestedQuantity = 90; break;
-                    case 'noventa e cinco': requestedQuantity = 95; break;
-                    case 'cem': requestedQuantity = 100; break;
-                    default: requestedQuantity = parseInt(numText); break;
-                }
-
-                if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
-                    expectedPaymentAmount = (requestedQuantity / 5) * 10;
-                    
-                    // Primeira mensagem personalizada
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
-                    addMessage(pixMsg1, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
-                    
-                    // Segunda mensagem personalizada
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
-                    addMessage(pixMsg2, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
-
-                    // Terceira mensagem personalizada
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    removeTypingIndicator();
-                    const pixMsg3 = `Meu assessor vai confirmar o pagamento e te enviar tudinho! ❤️🤤`;
-                    addMessage(pixMsg3, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
-                    
-                    addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
-                        chatInputArea.style.display = 'none';
-                        pixUploadArea.style.display = 'flex';
-                        adjustChatMessagesPadding();
-                        initializeTesseractWorker();
-                    });
-
-                    return;
-                }
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            addTypingIndicator();
 
             const personaPrompt = `
             Você é Suellen Rocha. Sua identidade é:
