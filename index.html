@@ -24,6 +24,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
   }
   /* Header estilo WhatsApp */
   header {
@@ -46,6 +47,71 @@
     font-size: 20px;
     margin: 0;
     user-select: none;
+  }
+
+  /* Online / Digitando status na área superior do chat */
+  #status-bar {
+    height: 24px;
+    background: #ECE5DD;
+    color: #555;
+    font-size: 14px;
+    font-style: italic;
+    padding-left: 60px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    border-bottom: 1px solid #ccc;
+  }
+  #status-bar .profile-small {
+    position: absolute;
+    left: 15px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #25D366;
+    object-fit: cover;
+    top: -4px;
+  }
+  #status-bar.online {
+    color: #25D366;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  /* Balãozinho online/typing no canto inferior esquerdo */
+  #bot-indicator {
+    position: fixed;
+    bottom: 100px;
+    left: 15px;
+    background: #25D366;
+    color: white;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    z-index: 10;
+  }
+  #bot-indicator .dot {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 1.4s infinite both;
+  }
+  #bot-indicator .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  #bot-indicator .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  @keyframes blink {
+    0%, 80%, 100% {opacity: 0.3;}
+    40% {opacity: 1;}
   }
 
   /* Área do chat */
@@ -78,14 +144,6 @@
     color: white;
     align-self: flex-end;
   }
-  /* Indicador de digitação */
-  #typing {
-    font-style: italic;
-    font-size: 13px;
-    color: #555;
-    margin-left: 5px;
-    display: none;
-  }
 
   /* Área de input + ícones */
   #input-area {
@@ -112,7 +170,6 @@
   #input-area .icon-btn:hover {
     filter: brightness(0.85);
   }
-
 </style>
 </head>
 <body>
@@ -121,8 +178,11 @@
       <img src="perfil.webp" alt="Perfil Suellen Rocha" id="perfil" />
       <h1>Suellen Rocha</h1>
     </header>
+    <div id="status-bar" class="online">
+      <img src="perfil.webp" alt="Perfil pequeno" class="profile-small" />
+      Online
+    </div>
     <div id="chat"></div>
-    <div id="typing">Digitando...</div>
     <form id="input-area" onsubmit="return false;">
       <input type="text" id="input" autocomplete="off" placeholder="Digite aqui..." />
       <img src="anexar.webp" alt="Anexar" title="Anexar comprovante" class="icon-btn" id="btnAttach" />
@@ -130,11 +190,16 @@
     </form>
   </div>
 
+  <div id="bot-indicator" style="display:none;">
+    Digitando
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
 <script>
-  // === CONFIGURAÇÕES ===
   const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss";
-  const CHAT_API_URL = "https://api.gemini.ai/v1/chat/completions"; // Exemplo para Gemini
-  const OCR_API_URL = "https://api.gemini.ai/v1/ocr"; // Exemplo OCR Gemini
+  const CHAT_API_URL = "https://api.gemini.ai/v1/chat/completions"; // exemplo
+  const OCR_API_URL = "https://api.gemini.ai/v1/ocr";
+
   const nomesValidos = ["antonio", "renimar", "pinheiro", "almeida"];
   const precosFotos = {
     10: 5, 20: 10, 30: 15, 40: 20, 50: 25, 60: 30, 70: 35,
@@ -143,19 +208,16 @@
   };
   let fotosDisponiveis = Array.from({length:100}, (_,i) => `foto${i+1}.webp`);
 
-  // === ELEMENTOS DOM ===
   const chat = document.getElementById("chat");
   const input = document.getElementById("input");
   const btnSend = document.getElementById("btnSend");
   const btnAttach = document.getElementById("btnAttach");
-  const typing = document.getElementById("typing");
+  const statusBar = document.getElementById("status-bar");
+  const botIndicator = document.getElementById("bot-indicator");
 
-  // === FUNÇÕES DE UTILIDADE ===
-  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-  function scrollToBottom(){
-    chat.scrollTop = chat.scrollHeight;
-  }
+  // Utilitário delay
+  function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+  function scrollToBottom(){ chat.scrollTop = chat.scrollHeight; }
 
   function appendMessage(text, fromBot=true){
     const div = document.createElement("div");
@@ -165,16 +227,22 @@
     scrollToBottom();
   }
 
-  async function botReply(text){
-    // Delay 3s invisível + 4s digitando
-    await wait(3000);
-    typing.style.display = "block";
-    await wait(4000);
-    typing.style.display = "none";
+  async function showTypingAndReply(text){
+    // status 'Digitando'
+    statusBar.textContent = "Digitando...";
+    statusBar.classList.remove("online");
+    botIndicator.style.display = "flex";
+
+    await wait(3000); // invisível
+    await wait(4000); // digitando
+
+    statusBar.textContent = "Online";
+    statusBar.classList.add("online");
+    botIndicator.style.display = "none";
+
     appendMessage(text,true);
   }
 
-  // Valida quantidade enviada pelo usuário
   function validarQtdFotos(qtd){
     if(!Number.isInteger(qtd)) return false;
     if(qtd < 5 || qtd > 100) return false;
@@ -182,7 +250,6 @@
     return true;
   }
 
-  // Validação do comprovante via OCR chamando API Gemini (exemplo)
   async function processarOCR(file){
     const formData = new FormData();
     formData.append("file", file);
@@ -196,7 +263,6 @@
       });
       if(!res.ok) throw new Error("Erro OCR");
       const data = await res.json();
-      // Supondo que 'text' contenha o texto extraído do comprovante
       return data.text || "";
     } catch(e){
       console.error(e);
@@ -204,7 +270,6 @@
     }
   }
 
-  // Verifica se comprovante é válido
   function checarComprovante(textoOCR){
     const texto = textoOCR.toLowerCase().replace(/\s+/g, "");
     let valorEncontrado = null;
@@ -219,21 +284,19 @@
     return {valorEncontrado, nomeValido};
   }
 
-  // Enviar fotos proporcionais sem repetição
   async function enviarFotos(qtd){
     const fotosEnviar = fotosDisponiveis.splice(0, qtd);
     if(fotosEnviar.length === 0){
-      await botReply("Já te mandei todas as fotos, meu bem... ❤️");
+      await showTypingAndReply("Já te mandei todas as fotos, meu bem... ❤️");
       return;
     }
-    await botReply(`Recebi seu Pix e tô mandando as ${qtd} fotos mais provocantes só pra você... 😏🤤`);
+    await showTypingAndReply(`Recebi seu Pix e tô mandando as ${qtd} fotos mais provocantes só pra você... 😏🤤`);
     for(let i=0; i<fotosEnviar.length; i++){
       await wait(800);
       appendMessage(`📷 ${fotosEnviar[i]}`, true);
     }
   }
 
-  // Função que chama API Gemini para resposta de IA
   async function responderIA(mensagemUsuario){
     const body = {
       model: "gpt-4o-mini",
@@ -250,7 +313,6 @@ Valide comprovantes via OCR e libere fotos conforme o valor pago.`
       ],
       temperature: 0.8
     };
-
     try {
       const res = await fetch(CHAT_API_URL, {
         method: "POST",
@@ -262,14 +324,13 @@ Valide comprovantes via OCR e libere fotos conforme o valor pago.`
       });
       if(!res.ok) throw new Error("Erro chat IA");
       const data = await res.json();
-      return data.choices?.[0]?.message?.content || "Hmm... me conta mais, amor 😈";
+      return data.choices?.[0]?.message?.content || "Ops, deu ruim aqui... tenta de novo, meu bem 😈";
     } catch(err){
       console.error(err);
       return "Ops, deu ruim aqui... tenta de novo, meu bem 😈";
     }
   }
 
-  // Lógica do envio de mensagem do usuário
   async function enviarMensagem(){
     const texto = input.value.trim();
     if(!texto) return;
@@ -280,22 +341,18 @@ Valide comprovantes via OCR e libere fotos conforme o valor pago.`
 
     if(validarQtdFotos(qtd)){
       const valor = qtd * 2;
-      // Envia as 3 mensagens separadas com delays
-      await botReply(`😈 Amor, ${qtd} fotinhas vão te deixar maluco... Vai ser só R$ ${valor}, tá bom?`);
-      await botReply(`🔥 Minha chave Pix é: 98981420070`);
-      await botReply(`😏 Tá no nome do meu assessor... me manda o comprovante aqui assim que fizer o Pix 💋`);
+      await showTypingAndReply(`😈 Amor, ${qtd} fotinhas vão te deixar maluco... Vai ser só R$ ${valor}, tá bom?`);
+      await showTypingAndReply(`🔥 Minha chave Pix é: 98981420070`);
+      await showTypingAndReply(`😏 Tá no nome do meu assessor... me manda o comprovante aqui assim que fizer o Pix 💋`);
     } else {
-      // Resposta da IA Gemini
       const resposta = await responderIA(texto);
-      await botReply(resposta);
+      await showTypingAndReply(resposta);
     }
   }
 
-  // Botões
   btnSend.addEventListener("click", enviarMensagem);
   input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); enviarMensagem(); } });
 
-  // Upload comprovante
   btnAttach.addEventListener("click", () => {
     const inputFile = document.createElement("input");
     inputFile.type = "file";
@@ -308,18 +365,17 @@ Valide comprovantes via OCR e libere fotos conforme o valor pago.`
       const { valorEncontrado, nomeValido } = checarComprovante(textoOCR);
       if(valorEncontrado && nomeValido){
         const qtdFotos = precosFotos[valorEncontrado];
-        await botReply(`Recebi seu Pix de R$ ${valorEncontrado}, gostoso 😈`);
+        await showTypingAndReply(`Recebi seu Pix de R$ ${valorEncontrado}, gostoso 😈`);
         await enviarFotos(qtdFotos);
       } else {
-        await botReply("Awn... não consegui validar seu comprovante 😢 Manda outro, por favor?");
+        await showTypingAndReply("Awn... não consegui validar seu comprovante 😢 Manda outro, por favor?");
       }
     };
     inputFile.click();
   });
 
-  // Mensagem inicial com delay conforme pedido
   window.onload = () => {
-    botReply("Oiê, meu bem! Que bom te ver por aqui... 🙈");
+    showTypingAndReply("Oiê, meu bem! Que bom te ver por aqui... 🙈");
   };
 </script>
 </body>
