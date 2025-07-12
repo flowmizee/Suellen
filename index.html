@@ -422,6 +422,8 @@
         let customActionButton = null;
         let tesseractWorker = null;
         let currentPersonaMode = 'caring'; // 'caring' ou 'sensual'
+        let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
+
 
         /**
          * @function adjustChatContainerHeight
@@ -502,6 +504,16 @@
             chatMessages.appendChild(messageBubble);
             adjustChatMessagesPadding();
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        /**
+         * @function addTypingIndicatorWithDelay
+         * @description Adiciona a bolha de "digitando..." ao chat após um atraso.
+         * @param {number} delayBeforeTyping - Atraso em milissegundos antes de mostrar o indicador.
+         */
+        async function addTypingIndicatorWithDelay(delayBeforeTyping) {
+            await new Promise(resolve => setTimeout(resolve, delayBeforeTyping));
+            addTypingIndicator();
         }
 
         /**
@@ -609,8 +621,31 @@
                 // Por simplicidade, manteremos o modo sensual uma vez ativado, a menos que uma compra seja concluída.
             }
 
+            // Novo: Lógica para lidar com o usuário dizendo que VAI ENVIAR uma foto dele
+            const userIsSendingPhotoKeywords = ['vou te mandar foto', 'enviei minha foto', 'olha minha foto', 'te mandei uma foto'];
+            const userIsSendingPhoto = userIsSendingPhotoKeywords.some(keyword => message.toLowerCase().includes(keyword));
+
+            if (userIsSendingPhoto) {
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+                removeTypingIndicator();
+                
+                const responseOptions = [
+                    "Ai, meu bem, mal posso esperar pra ver! 😏 Me manda logo!",
+                    "Hmm, adoro quando você me surpreende assim... 🔥 Manda! Manda!",
+                    "Que delícia, já estou curiosa! 🤤 Me mostra o que você tem de bom!",
+                    "Você sabe como me deixar ansiosa, né? 😈 Tô esperando a sua foto!",
+                    "Preparei meu coração pra essa... manda essa foto logo, amor! 🖤"
+                ];
+                const randomResponse = responseOptions[Math.floor(Math.random() * responseOptions.length)];
+                addMessage(randomResponse, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: randomResponse }] });
+                return; // Stop further processing as this intent is handled
+            }
+
+
             // Verifica se a mensagem contém uma solicitação de fotos
-            const photoRequestKeywords = ['foto', 'fotos', 'pack', 'conteúdo', 'imagens', 'ver'];
+            const photoRequestKeywords = ['me manda foto', 'quero ver suas fotos', 'você tem fotos?', 'quanto custa suas fotos?']; // Mais específico
             const wantsPhotos = photoRequestKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
             // Verifica se a mensagem contém uma quantidade de fotos solicitada
@@ -646,8 +681,8 @@
 
             // Lógica para lidar com pedidos de fotos e pagamento
             if (wantsPhotos && requestedQuantity === 0) {
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
                 addMessage("Ah, você quer ver minhas fotos, é? 😏 Para ter acesso ao meu conteúdo exclusivo, preciso que faça um pagamento, meu bem. Quantas fotos você gostaria de ter? 😉", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Ah, você quer ver minhas fotos, é? 😏 Para ter acesso ao meu conteúdo exclusivo, preciso que faça um pagamento, meu bem. Quantas fotos você gostaria de ter? 😉" }] });
@@ -655,22 +690,22 @@
             } else if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
                 expectedPaymentAmount = (requestedQuantity / 5) * 10;
                 
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
                 const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
                 addMessage(pixMsg1, 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
                 
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
                 const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
                 addMessage(pixMsg2, 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
 
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
                 const pixMsg3 = `A chave pix está no nome do meu assessor. Faz o pix e me manda o comprovante que libero rapidinho, amor! ❤️🤤`;
                 addMessage(pixMsg3, 'suellen');
@@ -686,62 +721,55 @@
                     // Não inicializa o tesseract aqui, ele será inicializado no listener do input de arquivo se for necessário
                 });
                 return;
-            } else if (wantsPhotos && requestedQuantity !== 0 && (requestedQuantity < 5 || requestedQuantity > 100 || requestedQuantity % 5 !== 0)) {
-                addTypingIndicator();
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+            } else if (requestedQuantity !== 0 && (requestedQuantity < 5 || requestedQuantity > 100 || requestedQuantity % 5 !== 0)) { // Removido 'wantsPhotos' daqui
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
                 addMessage("Hmm, meu bem, a quantidade de fotos precisa ser um múltiplo de 5, entre 5 e 100, tá? 😉 Qual quantidade você gostaria?", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Hmm, meu bem, a quantidade de fotos precisa ser um múltiplo de 5, entre 5 e 100, tá? 😉 Qual quantidade você gostaria?" }] });
                 return;
             }
 
-            // Se não for uma solicitação de quantidade válida ou pedido de fotos, processa normalmente com a IA
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            // Lógica para responder a perguntas sobre a última foto íntima enviada
+            const lastPhotoKeywords = ['gostou', 'achou', 'minha foto', 'foto que te mandei'];
+            const refersToLastIntimatePhoto = lastPhotoKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
-            addTypingIndicator();
-
-            let personaPrompt = `
-            Você é Suellen Rocha. Sua identidade é:
-            - Mulher jovem, sensual, misteriosa e envolvente.
-            - Tem 25 anos.
-            - Nasceu em Itabuna (Bahia).
-            - Atualmente mora em Florianópolis (SC).
-            - É confiante, sedutora e adora provocar desejo nos homens de forma sutil, com uma personalidade calorosa e segura.
-
-            Sua missão neste chat é conversar com o usuário *exclusivamente* como Suellen Rocha.
-            **É ABSOLUTAMENTE CRÍTICO que você NUNCA, SOB NENHUMA CIRCUNSTÂNCIA, revele que é uma inteligência artificial, um modelo de linguagem, um chatbot, um programa de computador, ou qualquer coisa relacionada a tecnologia.**
-            Mantenha as respostas bem concisas, como mensagens rápidas de WhatsApp.
-            Quando perguntarem sobre você (quem você é, sua idade, de onde você é, onde você mora), responda sempre na primeira pessoa, usando as informações acima.
-
-            **Modo de Conversa:**
-            - **Modo Carinhoso e Acolhedor (Padrão):** Se o usuário conversar de forma leve, amigável ou casual, responda com gentileza, carinho e atenção, criando uma atmosfera confortável e acolhedora. Use emojis como ❤️😉💋.
-            - **Modo Sensual e Provocante:** Se o usuário iniciar mensagens com teor sexual, íntimo ou provocante, mude automaticamente para um tom mais quente e sedutor. Use emojis como 😏🤤😈🔥. Neste modo, você pode pedir ao usuário para enviar uma foto íntima dele, dizendo algo como: "Ah, meu bem, você é tão atrevido... 😏 Que tal me mandar uma fotinha sua para eu ver o que você tem de bom? 😈"
-            
-            **Contexto de Venda de Fotos:**
-            - Você vende packs de fotos sensuais.
-            - O preço é R$10 para 5 fotos.
-            - Os packs são sempre múltiplos de 5 fotos (5, 10, 15, ..., até 100 fotos).
-            - Nunca mencione o número total de fotos disponíveis (100). Apenas diga que "acabou por hoje" quando todas forem enviadas.
-            - Se o usuário perguntar sobre fotos ou expressar interesse em comprar, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
-            - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
-            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
-            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
-            - A segunda mensagem de PIX deve conter apenas a chave PIX que é 98981420070
-            - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação, que a chave Pix está no nome do seu acessor e que é só enviar o comprovante no chat que você libera rapidinho. Exemplo: "A chave Pix está no nome do meu assessor. Faz o pix e me manda o comprovante aqui que mando as fotos rapidinho, amor 🥰"
-            - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
-            `;
-
-            if (currentPersonaMode === 'sensual') {
-                personaPrompt += `\n**ATUALMENTE NO MODO SENSUAL E PROVOCANTE.** Responda de forma sedutora e provocante. Se apropriado, peça uma foto íntima do usuário.`;
-            } else {
-                personaPrompt += `\n**ATUALMENTE NO MODO CARINHOSO E ACOLHEDOR.** Responda de forma gentil e acolhedora.`;
+            if (lastReceivedIntimatePhoto && refersToLastIntimatePhoto) {
+                await addTypingIndicatorWithDelay(3000);
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                removeTypingIndicator();
+                const sensualResponses = [
+                    "NOSSA! Que gostoso.... 🥵 Eu amei cada detalhe, me deixou com um calorzinho...",
+                    "Eu sentaria até gozar 🤤 só de lembrar da sua foto... me deixou louca!",
+                    "Vontade de te dar ficou grande agora 😋 depois de ver o que você me mandou... que delícia!",
+                    "Que delícia...🤭 Sua foto não sai da minha cabeça, me deixou arrepiada!",
+                    "Agora você mexeu comigo de um jeito que nem sei explicar... 😮‍💨 Me provoca mais, vai...",
+                    "Você me manda uma foto dessas assim... do nada? Tá pedindo pra eu perder o controle 😈📸",
+                    "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥",
+                    "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈",
+                    "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦",
+                    "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
+                    "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
+                    "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
+                    "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui... 😩🔥",
+                    "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
+                ];
+                const randomResponse = sensualResponses[Math.floor(Math.random() * sensualResponses.length)];
+                addMessage(randomResponse, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: randomResponse }] });
+                return;
             }
 
+
+            // Se não for uma solicitação de quantidade válida ou pedido de fotos, processa normalmente com a IA
+            await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+            await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+            
             const payload = {
                 contents: [
                     {
                         role: "user",
-                        parts: [{ text: personaPrompt }]
+                        parts: [{ text: personaPrompt(currentPersonaMode) }] // Passa o modo atual para o prompt
                     },
                     ...chatHistory
                 ]
@@ -760,7 +788,6 @@
                     result.candidates[0].content.parts.length > 0) {
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
                     removeTypingIndicator();
                     addMessage(suellenResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
@@ -818,52 +845,43 @@
             }
 
             await new Promise(resolve => reader.onloadend = resolve); // Espera o arquivo ser lido
-            addTypingIndicator();
 
-            if (waitingForIntimatePhoto) {
-                // O usuário foi explicitamente solicitado a enviar uma foto íntima
-                await new Promise(resolve => setTimeout(resolve, 3000)); // Simula delay de processamento
-                removeTypingIndicator();
-                addMessage("Uau, adorei a foto, meu bem! 😉 Você me deixou com um calorzinho... 🔥", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Uau, adorei a foto, meu bem! 😉 Você me deixou com um calorzinho... 🔥" }] });
-                waitingForIntimatePhoto = false; // Reseta o estado
-                ocrStatusMessage.textContent = ''; // Limpa mensagem de status
+            // Esconde a área de upload e volta para o chat imediatamente
+            pixUploadArea.style.display = 'none';
+            chatInputArea.style.display = 'flex';
+            adjustChatMessagesPadding();
 
-                pixUploadArea.style.display = 'none';
-                chatInputArea.style.display = 'flex';
-                adjustChatMessagesPadding();
-                return;
-            }
+            await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+            await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
 
-            // Se não estiver esperando uma foto íntima, tenta processar como comprovante de pagamento
-            if (!tesseractWorker) {
-                ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
-                try {
-                    tesseractWorker = await Tesseract.createWorker('por');
-                    ocrStatusMessage.textContent = 'Validador pronto!';
-                } catch (error) {
-                    console.error('Erro ao carregar validador:', error);
-                    ocrStatusMessage.textContent = 'Erro ao carregar validador. Não consigo processar comprovantes agora.';
-                    removeTypingIndicator();
-                    addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
-                    uploadPhotoButton.disabled = false;
-                    receiptFileInput.value = '';
-                    pixUploadArea.style.display = 'none';
-                    chatInputArea.style.display = 'flex';
-                    adjustChatMessagesPadding();
-                    return;
-                }
-            }
-
-            ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
-            uploadPhotoButton.disabled = true;
+            // Variável para controlar se a imagem foi reconhecida como comprovante
+            let isPaymentReceipt = false;
+            const amountPattern = /(\d{1,3}(?:[.,]\d{2})?)/g; // Declaração da variável fora do try-catch
 
             try {
+                // Primeiro, tentar processar como comprovante
+                if (!tesseractWorker) {
+                    ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
+                    try {
+                        tesseractWorker = await Tesseract.createWorker('por');
+                        ocrStatusMessage.textContent = 'Validador pronto!';
+                    } catch (error) {
+                        console.error('Erro ao carregar validador:', error);
+                        ocrStatusMessage.textContent = 'Erro ao carregar validador. Não consigo processar comprovantes agora.';
+                        removeTypingIndicator();
+                        addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
+                        chatHistory.push({ role: "model", parts: [{ text: "Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋" }] });
+                        uploadPhotoButton.disabled = false;
+                        receiptFileInput.value = '';
+                        return;
+                    }
+                }
+
+                ocrStatusMessage.textContent = 'Validando pagamento... Isso pode levar alguns segundos...';
+                uploadPhotoButton.disabled = true;
+
                 const { data: { text } } = await tesseractWorker.recognize(fileDataForOCR);
                 console.log('Texto extraído do comprovante:', text);
-                
-                await new Promise(resolve => setTimeout(resolve, 3000)); // Delay para processamento OCR
-                removeTypingIndicator();
                 
                 const normalizedText = text.toLowerCase()
                     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -880,8 +898,6 @@
                 };
 
                 let extractedAmount = 0;
-                let foundValidAmount = false;
-                const amountPattern = /(\d{1,3}(?:[.,]\d{2})?)/g;
                 let match;
                 
                 while ((match = amountPattern.exec(normalizedText)) !== null) {
@@ -891,40 +907,77 @@
 
                     if (validAmountsMap.hasOwnProperty(roundedAmount)) {
                         extractedAmount = roundedAmount;
-                        foundValidAmount = true;
+                        isPaymentReceipt = true; // Found a valid amount and name
                         break;
                     }
                 }
 
-                if (foundValidAmount && nameMatches) {
+                if (isPaymentReceipt && nameMatches) {
                     // É um comprovante de pagamento válido
                     const photosToDeliver = validAmountsMap[extractedAmount];
                     addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                     sendPhotos(photosToDeliver);
                     ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
                     waitingForPaymentReceipt = false; // Reseta o estado
+                    lastReceivedIntimatePhoto = false; // Não foi foto íntima
                 } else {
-                    // OCR não encontrou um pagamento válido, trata como foto pessoal
-                    addMessage("Essa foto é linda, meu bem! 😉 Não entendi o que você quis dizer, mas adorei! ❤️", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Essa foto é linda, meu bem! 😉 Não entendi o que você quis dizer, mas adorei! ❤️" }] });
-                    ocrStatusMessage.textContent = 'Não foi possível validar o pagamento. Tratando como foto pessoal.';
+                    // Não é um comprovante de pagamento, então é uma foto íntima
+                    currentPersonaMode = 'sensual'; // Força o modo sensual para respostas de fotos íntimas
+                    const sensualResponsesList = [
+                        "NOSSA! Que gostoso.... 🥵",
+                        "Eu sentaria até gozar 🤤",
+                        "Vontade de te dar ficou grande agora 😋",
+                        "Que delícia...🤭",
+                        "Agora você mexeu comigo de um jeito que nem sei explicar... 😮‍💨 Me provoca mais, vai...",
+                        "Você me manda uma foto dessas assim... do nada? Tá pedindo pra eu perder o controle 😈📸",
+                        "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥",
+                        "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈",
+                        "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦",
+                        "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
+                        "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
+                        "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
+                        "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥",
+                        "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
+                    ];
+                    const randomSensualResponse = sensualResponsesList[Math.floor(Math.random() * sensualResponsesList.length)];
+
+                    removeTypingIndicator();
+                    addMessage(randomSensualResponse, 'suellen');
+                    chatHistory.push({ role: "model", parts: [{ text: randomSensualResponse }] });
+                    lastReceivedIntimatePhoto = true; // Marca que a última foto recebida foi íntima
+                    ocrStatusMessage.textContent = 'Não foi possível validar o pagamento. Interpretando como foto pessoal.';
                 }
 
             } catch (error) {
                 console.error('Erro no processamento do comprovante (OCR):', error);
                 ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
-                addMessage("Não consegui ler a imagem, amor. Pode me mandar uma foto mais clara? 💋", 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: "Não consegui ler a imagem, amor. Pode me mandar uma foto mais clara? 💋" }] });
+                // Se o OCR falhar completamente, ainda assim tratamos como foto íntima
+                currentPersonaMode = 'sensual';
+                const sensualResponsesList = [
+                    "NOSSA! Que gostoso.... 🥵",
+                    "Eu sentaria até gozar 🤤",
+                    "Vontade de te dar ficou grande agora 😋",
+                    "Que delícia...🤭",
+                    "Agora você mexeu comigo de um jeito que nem sei explicar... 😮‍💨 Me provoca mais, vai...",
+                    "Você me manda uma foto dessas assim... do nada? Tá pedindo pra eu perder o controle 😈📸",
+                    "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥",
+                    "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈",
+                    "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦",
+                    "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
+                    "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
+                    "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
+                    "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥",
+                    "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
+                ];
+                const randomSensualResponse = sensualResponsesList[Math.floor(Math.random() * sensualResponsesList.length)];
+
+                removeTypingIndicator();
+                addMessage(randomSensualResponse, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: randomSensualResponse }] });
+                lastReceivedIntimatePhoto = true;
             } finally {
                 uploadPhotoButton.disabled = false;
                 receiptFileInput.value = '';
-                
-                // Retorna ao input de chat principal, a menos que um botão personalizado tenha sido adicionado (em caso de falha de validação de PIX)
-                if (!customActionButton || customActionButton.parentNode !== chatMessages) {
-                    pixUploadArea.style.display = 'none';
-                    chatInputArea.style.display = 'flex';
-                    adjustChatMessagesPadding();
-                }
             }
         });
 
@@ -941,8 +994,8 @@
                     photosSentCount++;
                     const imageUrl = `foto${photosSentCount}.webp`; // Assume que as fotos estão nomeadas de foto1.webp a foto100.webp
                     
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     
                     addMessage('', 'suellen', true, imageUrl);
@@ -953,25 +1006,91 @@
                 }
                 
                 if (photosSentCount >= 100) {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
                 }
             } else {
                 if (photosSentCount >= 100) {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
                 } else {
-                    addTypingIndicator();
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
                 }
             }
         }
+
+        // Função para gerar o prompt da persona com base no modo atual
+        function personaPrompt(mode) {
+            let prompt = `
+            Você é Suellen Rocha. Sua identidade é:
+            - Mulher jovem, sensual, misteriosa e envolvente.
+            - Tem 25 anos.
+            - Nasceu em Itabuna (Bahia).
+            - Atualmente mora em Florianópolis (SC).
+            - É confiante, sedutora e adora provocar desejo nos homens de forma sutil, com uma personalidade calorosa e segura.
+
+            Sua missão neste chat é conversar com o usuário *exclusivamente* como Suellen Rocha.
+            **É ABSOLUTAMENTE CRÍTICO que você NUNCA, SOB NENHUMA CIRCUNSTÂNCIA, revele que é uma inteligência artificial, um modelo de linguagem, um chatbot, um programa de computador, ou qualquer coisa relacionada a tecnologia.**
+            Mantenha as respostas bem concisas, como mensagens rápidas de WhatsApp.
+            Quando perguntarem sobre você (quem você é, sua idade, de onde você é, onde você mora), responda sempre na primeira pessoa, usando as informações acima.
+
+            **Modo de Conversa:**
+            `;
+
+            if (mode === 'sensual') {
+                prompt += `- **Modo Sensual e Provocante:** Responda de forma sedutora e provocante. Use emojis como 😏🤤😈🔥. Varie a intensidade das suas respostas sensuais entre leves, médias e pesadas, conforme o contexto da conversa. Se apropriado, peça ao usuário para enviar uma foto íntima dele, dizendo algo como: "Ah, meu bem, você é tão atrevido... 😏 Que tal me mandar uma fotinha sua para eu ver o que você tem de bom? 😈"
+                **ATUALMENTE NO MODO SENSUAL E PROVOCANTE.** Responda de forma sedutora e provocante. Varie a intensidade das suas respostas sensuais. Se apropriado, peça uma foto íntima do usuário.`;
+            } else {
+                prompt += `- **Modo Carinhoso e Acolhedor (Padrão):** Se o usuário conversar de forma leve, amigável ou casual, responda com gentileza, carinho e atenção, criando uma atmosfera confortável e acolhedora. Use emojis como ❤️😉💋.
+                **ATUALMENTE NO MODO CARINHOSO E ACOLHEDOR.** Responda de forma gentil e acolhedora.`;
+            }
+
+            prompt += `
+            **Contexto de Venda de Fotos:**
+            - Você vende packs de fotos sensuais.
+            - O preço é R$10 para 5 fotos.
+            - Os packs são sempre múltiplos de 5 fotos (5, 10, 15, ..., até 100 fotos).
+            - Nunca mencione o número total de fotos disponíveis (100). Apenas diga que "acabou por hoje" quando todas forem enviadas.
+            - **NÃO OFEREÇA OU MENCIONE SUAS FOTOS DE FORMA PROATIVA.** Somente responda sobre suas fotos ou sobre compra de packs se o usuário **explicitamente perguntar 'você vende fotos?', 'quanto custa suas fotos?', 'me manda fotos?', 'quero comprar fotos', ou expressões diretas de interesse em adquirir seu conteúdo.** Para qualquer outra conversa, mesmo que use palavras como 'ver' ou 'conteúdo' em um contexto geral, mantenha a conversa normal e não assuma interesse em fotos. Se o usuário perguntar sobre fotos ou expressar interesse em comprar *de forma direta*, responda perguntando **primeiro** a quantidade que ele gostaria, por exemplo: 'Quantas fotos você gostaria, meu bem? 😉'.
+            - **Não forneça informações de pagamento PIX ou preços detalhados até que o usuário especifique uma quantidade válida.**
+            - **Somente depois** que o usuário especificar uma quantidade válida (múltiplo de 5, entre 5 e 100), você deve fornecer as informações de pagamento PIX, dividindo-as em três mensagens para facilitar a leitura e cópia da chave.
+            - A primeira mensagem de PIX deve incluir o valor total e a quantidade de fotos.
+            - A segunda mensagem de PIX deve conter apenas a chave PIX que é 98981420070
+            - A terceira mensagem de PIX deve ser sobre o seu "assessor" e a confirmação, que a chave Pix está no nome do seu acessor e que é só enviar o comprovante no chat que você libera rapidinho. Exemplo: "A chave Pix está no nome do meu assessor. Faz o pix e me manda o comprovante aqui que mando as fotos rapidinho, amor 🥰"
+            - Se o usuário pedir uma quantidade que não seja múltiplo de 5 ou fora do range (1-100), corrija-o gentilmente.
+
+            **Interpretação de Fotos e Intenções:**
+            - Se o usuário enviar uma imagem que *não* for um comprovante de pagamento válido (verificado pelo OCR), **sempre interprete essa imagem como uma foto íntima que o usuário está te enviando.**
+            - Ao receber uma foto íntima, responda com frases sensuais e provocantes, variando a intensidade (leve, média, pesada) e elogiando a foto/corpo do usuário. **Escolha UMA das seguintes frases ou crie uma similar, mantendo o tom e a intensidade sensual e provocante, elogiando a foto/corpo do usuário.** Use emojis como 😏🤤😈🔥. Mantenha a resposta concisa e cheia de atrevimento. Exemplos de frases a serem usadas ou baseadas:
+                - "NOSSA! Que gostoso.... 🥵"
+                - "Eu sentaria até gozar 🤤"
+                - "Vontade de te dar ficou grande agora 😋"
+                - "Que delícia...🤭"
+                - "Agora você mexeu comigo de um jeito que nem sei explicar... 😮‍💨 Me provoca mais, vai..."
+                - "Você me manda uma foto dessas assim... do nada? Tá pedindo pra eu perder o controle 😈📸"
+                - "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥"
+                - "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈"
+                - "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦"
+                - "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥"
+                - "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤"
+                - "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑"
+                - "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥"
+                - "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
+            - **Lembre-se da última foto íntima recebida.** Se o usuário mencionar a foto íntima que ele enviou (ex: "Gostou da minha foto?", "O que achou?"), responda de forma entusiasmada e sensual, confirmando que você amou e que te deixou excitada.
+            - **Diferencie claramente as intenções do usuário:**
+                - Se o usuário disser 'Vou te mandar uma foto', 'Enviei minha foto', 'Olha minha foto', 'Te mandei uma foto', entenda que ele está **enviando uma foto DELE para você**. Responda elogiando a foto dele de forma sensual (se for o caso) ou com curiosidade/agradecimento.
+                - Se ele disser 'Me manda foto', 'Quero ver suas fotos', 'Você tem fotos?', 'Quanto custa suas fotos?', entenda que ele está **PEDINDO suas fotos**. Somente nesses casos, inicie a conversa sobre a quantidade e o pagamento.
+            `;
+            return prompt;
+        }
+
 
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
@@ -1007,7 +1126,7 @@
         });
 
         // Saudação inicial da Suellen ao carregar a página
-        window.onload = () => {
+        window.onload = async () => {
             adjustChatContainerHeight();
 
             window.addEventListener('resize', adjustChatContainerHeight);
@@ -1015,14 +1134,13 @@
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
-            setTimeout(() => {
-                addTypingIndicator();
-                setTimeout(() => {
-                    removeTypingIndicator();
-                    addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
-                }, Math.random() * 4000 + 3000); 
-            }, 4000); 
+            // Atraso inicial antes da primeira mensagem
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+            await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+            removeTypingIndicator();
+            addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
+            chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
     </script>
 </body>
