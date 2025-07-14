@@ -362,7 +362,7 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-        </div>
+            </div>
 
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
@@ -423,7 +423,7 @@
         let currentPersonaMode = 'caring'; // 'caring' ou 'sensual'
         let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
 
-        // Array para armazenar as imagens pré-carregadas (apenas para otimização, não para lógica crítica)
+        // Array para armazenar as imagens pré-carregadas
         const preloadedImages = [];
 
         /**
@@ -648,7 +648,6 @@
                 return; // Stop further processing as this intent is handled
             }
 
-
             // Verifica se a mensagem contém uma solicitação de fotos
             const photoRequestKeywords = ['me manda foto', 'quero ver suas fotos', 'você tem fotos?', 'quanto custa suas fotos?']; // Mais específico
             const wantsPhotos = photoRequestKeywords.some(keyword => message.toLowerCase().includes(keyword));
@@ -764,7 +763,6 @@
                 chatHistory.push({ role: "model", parts: [{ text: randomResponse }] });
                 return;
             }
-
 
             // Se não for uma solicitação de quantidade válida ou pedido de fotos, processa normalmente com a IA
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
@@ -1018,38 +1016,36 @@
          * @param {number} numPhotosToDeliver - A quantidade de fotos a serem enviadas.
          */
         async function sendPhotos(numPhotosToDeliver) {
-            const photosToSendThisBatch = Math.min(numPhotosToDeliver, 100 - photosSentCount);
+            // Verifica se há fotos suficientes disponíveis
+            const remainingPhotos = 100 - photosSentCount;
+            const photosToSend = Math.min(numPhotosToDeliver, remainingPhotos);
 
-            if (photosToSendThisBatch > 0) {
-                for (let i = 0; i < photosToSendThisBatch; i++) {
-                    photosSentCount++;
-                    // Directly construct the image URL, relying on the file system
-                    const imageUrl = `foto${photosSentCount}.webp`;
-                    
-                    addMessage('', 'suellen', true, imageUrl);
-                    
-                    // Pequeno delay entre fotos para melhor visualização
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
+            if (photosToSend <= 0) {
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+                removeTypingIndicator();
+                addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
+                return;
+            }
+
+            // Envia as fotos uma por uma com um pequeno delay
+            for (let i = 0; i < photosToSend; i++) {
+                const photoNumber = photosSentCount + 1;
+                const imageUrl = `foto${photoNumber}.webp`;
                 
-                if (photosSentCount >= 100) {
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
-                    addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
-                }
-            } else {
-                if (photosSentCount >= 100) {
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
-                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
-                } else {
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
-                    addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
-                }
+                addMessage('', 'suellen', true, imageUrl);
+                photosSentCount++;
+                
+                // Pequeno delay entre fotos para melhor visualização
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            // Verifica se todas as fotos foram enviadas
+            if (photosSentCount >= 100) {
+                await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+                removeTypingIndicator();
+                addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
             }
         }
 
@@ -1065,6 +1061,7 @@
 
             Sua missão neste chat é conversar com o usuário *exclusivamente* como Suellen Rocha.
             **É ABSOLUTAMENTE CRÍTICO que você NUNCA, SOB NENHUMA CIRCUNSTÂNCIA, revele que é uma inteligência artificial, um modelo de linguagem, um chatbot, um programa de computador, ou qualquer coisa relacionada a tecnologia.**
+
             Mantenha as respostas bem concisas, como mensagens rápidas de WhatsApp.
             Quando perguntarem sobre você (quem você é, sua idade, de onde você é, onde você mora), responda sempre na primeira pessoa, usando as informações acima.
 
@@ -1118,7 +1115,6 @@
             return prompt;
         }
 
-
         sendButton.addEventListener('click', () => {
             const message = chatInput.value.trim();
             if (message) {
@@ -1170,13 +1166,15 @@
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
 
-        // Pré-carregador de imagens (melhorado para ser mais robusto)
+        // Pré-carregador de imagens e armazenador no array
         window.addEventListener("load", () => {
             for (let i = 1; i <= 100; i++) {
                 const img = new Image();
-                img.src = `foto${i}.webp`; // Use a URL direta aqui
+                img.src = `foto${i}.webp`;
                 img.onload = () => {
-                    // console.log(`Preloaded: ${img.src}`); // Optional: for debugging
+                    // Once loaded, store the image object in the array
+                    preloadedImages[i - 1] = img;
+                    console.log(`Preloaded: ${img.src}`);
                 };
                 img.onerror = () => {
                     console.error(`Failed to preload: foto${i}.webp`);
