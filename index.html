@@ -1142,6 +1142,15 @@
             addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
+
+        // Pré-carregador silencioso de imagens (não exibe nada)
+window.addEventListener("load", () => {
+  for (let i = 1; i <= 100; i++) {
+    const img = new Image();
+    img.src = `foto${i}.webp`;
+    // Imagem carrega em cache, mas não aparece nem interfere
+  }
+});
     </script>
 </body>
 </html>
