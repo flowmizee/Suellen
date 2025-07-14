@@ -920,8 +920,34 @@
                 if (isPaymentReceipt && nameMatches) {
                     // É um comprovante de pagamento válido
                     const photosToDeliver = validAmountsMap[extractedAmount];
+                    
+                    // 1. Mostra a mensagem de confirmação
                     addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
+                    
+                    // 2. Envia as fotos imediatamente (sem delay)
                     sendPhotos(photosToDeliver);
+                    
+                    // 3. Depois de um pequeno delay, mostra a mensagem provocante
+                    setTimeout(async () => {
+                        await addTypingIndicatorWithDelay(2000); // 2s delay before typing
+                        await new Promise(resolve => setTimeout(resolve, 3000)); // 3s delay after typing
+                        removeTypingIndicator();
+                        
+                        const followUpMessages = [
+                            "Espero que essas fotinhas deixem seu dia mais quente... 😏",
+                            "Gostou do que viu? Eu sabia que ia adorar... 🤤",
+                            "Agora você vai ficar me devendo uma visita... 😈",
+                            "Quer saber um segredo? Eu também me excitei tirando essas fotos... 🔥",
+                            "Me conta depois qual foi a sua favorita... eu tenho minhas suspeitas 😉",
+                            "Você não imagina o trabalho que deu pra tirar essas fotos... mas valeu cada segundo vendo sua reação 😘",
+                            "Agora você tem um pedacinho meu só pra você... guarda com carinho 🖤",
+                            "Cada foto tem uma história... qual você quer que eu conte primeiro? 😏"
+                        ];
+                        const randomFollowUp = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
+                        addMessage(randomFollowUp, 'suellen');
+                        chatHistory.push({ role: "model", parts: [{ text: randomFollowUp }] });
+                    }, 1000); // Pequeno delay antes de começar a digitar
+                    
                     ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
                     waitingForPaymentReceipt = false; // Reseta o estado
                     lastReceivedIntimatePhoto = false; // Não foi foto íntima
@@ -1002,7 +1028,8 @@
                     
                     addMessage('', 'suellen', true, imageUrl);
                     
-                    // No artificial delays between photos, they will appear as quickly as possible
+                    // Pequeno delay entre fotos para melhor visualização
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
                 
                 if (photosSentCount >= 100) {
