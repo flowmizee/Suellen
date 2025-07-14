@@ -354,7 +354,7 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <img src="https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
+            <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
                 <p id="status-text">online</p>
@@ -379,10 +379,10 @@
             <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem...">
             <div class="attachment-buttons">
                 <button class="attachment-button" id="attach-button">
-                    <img src="https://placehold.co/30x30/FF69B4/FFFFFF?text=Anexar" alt="Anexar">
+                    <img src="anexar.webp" alt="Anexar">
                 </button>
                 <button class="attachment-button" id="send-photo-button">
-                    <img src="https://placehold.co/30x30/FF69B4/FFFFFF?text=Foto" alt="Enviar Foto">
+                    <img src="enviarfoto.webp" alt="Enviar Foto">
                 </button>
             </div>
             <button id="send-button" class="send-button">
@@ -934,7 +934,7 @@
                     
                     const followUpMessages = [
                         "Espero que essas fotinhas deixem seu dia mais quente... 😏",
-                        "Gostou do que viu? Eu sabia que ia adorar... 🤤",
+                        "Gostou do que viu? Eu sabia que ia adorar...🤤",
                         "Agora você vai ficar me devendo uma visita... 😈",
                         "Quer saber um segredo? Eu também me excitei tirando essas fotos... 🔥",
                         "Me conta depois qual foi a sua favorita... eu tenho minhas suspeitas 😉",
@@ -950,7 +950,7 @@
                     waitingForPaymentReceipt = false;
                     lastReceivedIntimatePhoto = false; // Reseta a flag de foto íntima recebida
                 } else {
-                    // Se não for um comprovante válido, interpreta como foto pessoal e responde sensualmente
+                    // Se não for um comprovante válido, interpreta como foto personal e responde sensualmente
                     currentPersonaMode = 'sensual'; // Garante que a persona esteja no modo sensual
                     const sensualResponsesList = [
                         "NOSSA! Que gostoso.... 🥵",
@@ -1102,10 +1102,10 @@
                 - "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥"
                 - "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈"
                 - "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦"
-                - "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥"
-                - "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤"
-                - "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑"
-                - "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥"
+                - "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
+                - "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
+                - "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
+                - "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥",
                 - "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
             - **Lembre-se da última foto íntima recebida.** Se o usuário mencionar a foto íntima que ele enviou (ex: "Gostou da minha foto?", "O que achou?"), responda de forma entusiasmada e sensual, confirmando que você amou e que te deixou excitada.
             - **Diferencie claramente as intenções do usuário:**
@@ -1172,8 +1172,9 @@
         window.addEventListener("load", () => {
             for (let i = 1; i <= 100; i++) {
                 const img = new Image();
-                // Usando placeholder para as imagens, pois as originais não foram fornecidas
-                img.src = `https://placehold.co/150x150/FF69B4/FFFFFF?text=Foto${i}`; 
+                // Usa um placeholder como fallback para as imagens
+                const imageUrl = `https://placehold.co/150x150/FF69B4/FFFFFF?text=Foto${i}`; 
+                img.src = imageUrl;
                 img.onload = () => {
                     preloadedImages[i - 1] = img;
                     console.log(`Preloaded: ${img.src}`);
