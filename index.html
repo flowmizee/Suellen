@@ -362,7 +362,7 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-            </div>
+        </div>
 
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
@@ -423,8 +423,8 @@
         let currentPersonaMode = 'caring'; // 'caring' ou 'sensual'
         let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
 
-        // Array para armazenar as imagens pré-carregadas
-        const preloadedImages = Array(100).fill(null); // Inicializa com 100 posições nulas
+        // Array para armazenar as imagens pré-carregadas (apenas para otimização, não para lógica crítica)
+        const preloadedImages = [];
 
         /**
          * @function adjustChatContainerHeight
@@ -501,11 +501,6 @@
                 img.onload = () => {
                     adjustChatMessagesPadding();
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                };
-                // Adiciona fallback para imagens que não carregam
-                img.onerror = () => {
-                    img.src = 'https://placehold.co/300x400/4A0080/FFFFFF?text=Imagem+Não+Encontrada';
-                    console.error(`Failed to load image: ${imageUrl}`);
                 };
                 messageBubble.appendChild(img);
             } else {
@@ -930,7 +925,7 @@
                     addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
                     
                     // 2. Envia as fotos imediatamente (sem delay)
-                    await sendPhotos(photosToDeliver); // Adicionado await para garantir que todas as fotos sejam enviadas
+                    sendPhotos(photosToDeliver);
                     
                     // 3. Depois de um pequeno delay, mostra a mensagem provocante
                     setTimeout(async () => {
@@ -1023,58 +1018,38 @@
          * @param {number} numPhotosToDeliver - A quantidade de fotos a serem enviadas.
          */
         async function sendPhotos(numPhotosToDeliver) {
-            // Verifica se há fotos suficientes disponíveis
-            const availablePhotos = 100 - photosSentCount;
-            const photosToSend = Math.min(numPhotosToDeliver, availablePhotos);
+            const photosToSendThisBatch = Math.min(numPhotosToDeliver, 100 - photosSentCount);
 
-            if (photosToSend <= 0) {
+            if (photosToSendThisBatch > 0) {
+                for (let i = 0; i < photosToSendThisBatch; i++) {
+                    photosSentCount++;
+                    // Directly construct the image URL, relying on the file system
+                    const imageUrl = `foto${photosSentCount}.webp`;
+                    
+                    addMessage('', 'suellen', true, imageUrl);
+                    
+                    // Pequeno delay entre fotos para melhor visualização
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
                 if (photosSentCount >= 100) {
-                    await addTypingIndicatorWithDelay(3000);
-                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
+                    removeTypingIndicator();
+                    addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
+                }
+            } else {
+                if (photosSentCount >= 100) {
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
                 } else {
-                    await addTypingIndicatorWithDelay(3000);
-                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
+                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                     removeTypingIndicator();
                     addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
                 }
-                return;
-            }
-
-            // Envia as fotos uma por uma com um pequeno intervalo
-            for (let i = 0; i < photosToSend; i++) {
-                const photoIndex = photosSentCount + 1; // +1 porque as fotos começam em 1
-                const imageUrl = `foto${photoIndex}.webp`;
-                
-                // Cria um elemento de imagem para verificar se ela carrega corretamente
-                const img = new Image();
-                img.src = imageUrl;
-                
-                // Adiciona um fallback caso a imagem não carregue
-                img.onerror = () => {
-                    console.error(`Failed to load image: ${imageUrl}`);
-                    // Se a imagem não carregar, tenta novamente com um placeholder
-                    addMessage('', 'suellen', true, 'https://placehold.co/300x400/4A0080/FFFFFF?text=Imagem+Não+Encontrada');
-                };
-                
-                // Se a imagem carregar corretamente, adiciona ao chat
-                img.onload = () => {
-                    addMessage('', 'suellen', true, imageUrl);
-                };
-                
-                photosSentCount++;
-                
-                // Pequeno delay entre fotos para melhor visualização
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-
-            // Verifica se todas as fotos foram enviadas
-            if (photosSentCount >= 100) {
-                await addTypingIndicatorWithDelay(3000);
-                await new Promise(resolve => setTimeout(resolve, 4000));
-                removeTypingIndicator();
-                addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
             }
         }
 
@@ -1186,9 +1161,6 @@
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
-            // Pré-carrega as primeiras imagens para garantir que estejam disponíveis
-            await preloadInitialImages();
-            
             // Atraso inicial antes da primeira mensagem
             await new Promise(resolve => setTimeout(resolve, 4000));
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
@@ -1198,47 +1170,19 @@
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
 
-        /**
-         * @function preloadInitialImages
-         * @description Pré-carrega as primeiras imagens para garantir disponibilidade imediata
-         */
-        async function preloadInitialImages() {
-            // Pré-carrega as primeiras 20 imagens para garantir que estejam disponíveis rapidamente
-            for (let i = 1; i <= 20; i++) {
+        // Pré-carregador de imagens (melhorado para ser mais robusto)
+        window.addEventListener("load", () => {
+            for (let i = 1; i <= 100; i++) {
                 const img = new Image();
-                img.src = `foto${i}.webp`;
+                img.src = `foto${i}.webp`; // Use a URL direta aqui
                 img.onload = () => {
-                    preloadedImages[i - 1] = img;
-                    console.log(`Pré-carregada: foto${i}.webp`);
+                    // console.log(`Preloaded: ${img.src}`); // Optional: for debugging
                 };
                 img.onerror = () => {
-                    console.error(`Falha ao carregar: foto${i}.webp`);
-                    // Se falhar, tenta novamente após um curto intervalo
-                    setTimeout(() => {
-                        img.src = `foto${i}.webp`;
-                    }, 500);
+                    console.error(`Failed to preload: foto${i}.webp`);
                 };
-                await new Promise(resolve => setTimeout(resolve, 50)); // Pequeno delay entre requisições
             }
-            
-            // Continua pré-carregando o restante das imagens em segundo plano
-            for (let i = 21; i <= 100; i++) {
-                const img = new Image();
-                img.src = `foto${i}.webp`;
-                img.onload = () => {
-                    preloadedImages[i - 1] = img;
-                    console.log(`Pré-carregada: foto${i}.webp`);
-                };
-                img.onerror = () => {
-                    console.error(`Falha ao carregar: foto${i}.webp`);
-                    // Se falhar, tenta novamente após um curto intervalo
-                    setTimeout(() => {
-                        img.src = `foto${i}.webp`;
-                    }, 500);
-                };
-                await new Promise(resolve => setTimeout(resolve, 30)); // Pequeno delay entre requisições
-            }
-        }
+        });
     </script>
 </body>
 </html>
