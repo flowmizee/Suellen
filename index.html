@@ -1064,9 +1064,9 @@
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            await addTypingIndicatorWithDelay(2000);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await addTypingIndicatorWithDelay(1000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
             removeTypingIndicator();
             addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
