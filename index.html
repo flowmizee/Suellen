@@ -354,7 +354,6 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
@@ -363,10 +362,8 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-            <!-- Mensagens serão inseridas aqui -->
-        </div>
+            </div>
 
-        <!-- Nova seção para upload de comprovante PIX -->
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
                 <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
@@ -427,7 +424,7 @@
         let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
 
         // Array para armazenar as imagens pré-carregadas
-        const preloadedImages = [];
+        const preloadedImages = Array(100).fill(null); // Inicializa com 100 posições nulas
 
         /**
          * @function adjustChatContainerHeight
@@ -504,6 +501,11 @@
                 img.onload = () => {
                     adjustChatMessagesPadding();
                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                };
+                // Adiciona fallback para imagens que não carregam
+                img.onerror = () => {
+                    img.src = 'https://placehold.co/300x400/4A0080/FFFFFF?text=Imagem+Não+Encontrada';
+                    console.error(`Failed to load image: ${imageUrl}`);
                 };
                 messageBubble.appendChild(img);
             } else {
@@ -692,7 +694,7 @@
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
-                await addMessage("Ah, você quer ver minhas fotos, é? 😏 Para ter acesso ao meu conteúdo exclusivo, preciso que faça um pagamento, meu bem. Quantas fotos você gostaria de ter? 😉", 'suellen');
+                addMessage("Ah, você quer ver minhas fotos, é? 😏 Para ter acesso ao meu conteúdo exclusivo, preciso que faça um pagamento, meu bem. Quantas fotos você gostaria de ter? 😉", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Ah, você quer ver minhas fotos, é? 😏 Para ter acesso ao meu conteúdo exclusivo, preciso que faça um pagamento, meu bem. Quantas fotos você gostaria de ter? 😉" }] });
                 return;
             } else if (requestedQuantity >= 5 && requestedQuantity <= 100 && requestedQuantity % 5 === 0) {
@@ -701,20 +703,23 @@
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
-                await addMessage(`Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`, 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉` }] });
+                const pixMsg1 = `Perfeito! 🔥 Para ${requestedQuantity} fotinhas exclusivas, o valor é R$${expectedPaymentAmount.toFixed(2).replace('.', ',')}. 😉`;
+                addMessage(pixMsg1, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: pixMsg1 }] });
                 
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
-                await addMessage(`Minha chave PIX é: \n\n**98981420070**`, 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: `Minha chave PIX é: \n\n**98981420070**` }] });
+                const pixMsg2 = `Minha chave PIX é: \n\n**98981420070**`;
+                addMessage(pixMsg2, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: pixMsg2 }] });
 
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
-                await addMessage(`A chave pix está no nome do meu assessor. Faz o pix e me manda o comprovante que libero rapidinho, amor! ❤️🤤`, 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: `A chave pix está no nome do meu assessor. Faz o pix e me manda o comprovante que libero rapidinho, amor! ❤️🤤` }] });
+                const pixMsg3 = `A chave pix está no nome do meu assessor. Faz o pix e me manda o comprovante que libero rapidinho, amor! ❤️🤤`;
+                addMessage(pixMsg3, 'suellen');
+                chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
                 
                 waitingForPaymentReceipt = true; // Define que estamos esperando um comprovante
                 waitingForIntimatePhoto = false; // Garante que não estamos esperando foto íntima
@@ -730,7 +735,7 @@
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
-                await addMessage("Hmm, meu bem, a quantidade de fotos precisa ser um múltiplo de 5, entre 5 e 100, tá? 😉 Qual quantidade você gostaria?", 'suellen');
+                addMessage("Hmm, meu bem, a quantidade de fotos precisa ser um múltiplo de 5, entre 5 e 100, tá? 😉 Qual quantidade você gostaria?", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Hmm, meu bem, a quantidade de fotos precisa ser um múltiplo de 5, entre 5 e 100, tá? 😉 Qual quantidade você gostaria?" }] });
                 return;
             }
@@ -760,7 +765,7 @@
                     "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
                 ];
                 const randomResponse = sensualResponses[Math.floor(Math.random() * sensualResponses.length)];
-                await addMessage(randomResponse, 'suellen');
+                addMessage(randomResponse, 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: randomResponse }] });
                 return;
             }
@@ -794,7 +799,7 @@
                     const suellenResponse = result.candidates[0].content.parts[0].text;
 
                     removeTypingIndicator();
-                    await addMessage(suellenResponse, 'suellen');
+                    addMessage(suellenResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: suellenResponse }] });
 
                     // Check if Suellen requested an intimate photo in her response
@@ -805,13 +810,13 @@
 
                 } else {
                     removeTypingIndicator();
-                    await addMessage("Desculpe, não entendi, amor. Pode repetir? 💋", 'suellen');
+                    addMessage("Desculpe, não entendi, amor. Pode repetir? 💋", 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: "Desculpe, não entendi, amor. Pode repetir? 💋" }] });
                 }
             } catch (error) {
                 console.error("Erro ao chamar a API Gemini:", error);
                 removeTypingIndicator();
-                await addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
+                addMessage("Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉", 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: "Ops! Deu um probleminha aqui, mas já estou resolvendo. Tenta de novo em um minutinho, tá? 😉" }] });
             }
         }
@@ -874,7 +879,7 @@
                         console.error('Erro ao carregar validador:', error);
                         ocrStatusMessage.textContent = 'Erro ao carregar validador. Não consigo processar comprovantes agora.';
                         removeTypingIndicator();
-                        await addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
+                        addMessage("Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋", 'suellen');
                         chatHistory.push({ role: "model", parts: [{ text: "Não consegui iniciar o validador, amor. Tenta de novo mais tarde? 💋" }] });
                         uploadPhotoButton.disabled = false;
                         receiptFileInput.value = '';
@@ -920,10 +925,34 @@
                 if (isPaymentReceipt && nameMatches) {
                     // É um comprovante de pagamento válido
                     const photosToDeliver = validAmountsMap[extractedAmount];
-                    // Removed typing indicator before "Pix confirmado"
-                    await addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Pix confirmado, amor 😘... Aqui estão suas fotos 😈" }] });
-                    sendPhotos(photosToDeliver); // This function now handles the delays and follow-up message
+                    
+                    // 1. Mostra a mensagem de confirmação
+                    addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
+                    
+                    // 2. Envia as fotos imediatamente (sem delay)
+                    await sendPhotos(photosToDeliver); // Adicionado await para garantir que todas as fotos sejam enviadas
+                    
+                    // 3. Depois de um pequeno delay, mostra a mensagem provocante
+                    setTimeout(async () => {
+                        await addTypingIndicatorWithDelay(2000); // 2s delay before typing
+                        await new Promise(resolve => setTimeout(resolve, 3000)); // 3s delay after typing
+                        removeTypingIndicator();
+                        
+                        const followUpMessages = [
+                            "Espero que essas fotinhas deixem seu dia mais quente... 😏",
+                            "Gostou do que viu? Eu sabia que ia adorar... 🤤",
+                            "Agora você vai ficar me devendo uma visita... 😈",
+                            "Quer saber um segredo? Eu também me excitei tirando essas fotos... 🔥",
+                            "Me conta depois qual foi a sua favorita... eu tenho minhas suspeitas 😉",
+                            "Você não imagina o trabalho que deu pra tirar essas fotos... mas valeu cada segundo vendo sua reação 😘",
+                            "Agora você tem um pedacinho meu só pra você... guarda com carinho 🖤",
+                            "Cada foto tem uma história... qual você quer que eu conte primeiro? 😏"
+                        ];
+                        const randomFollowUp = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
+                        addMessage(randomFollowUp, 'suellen');
+                        chatHistory.push({ role: "model", parts: [{ text: randomFollowUp }] });
+                    }, 1000); // Pequeno delay antes de começar a digitar
+                    
                     ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
                     waitingForPaymentReceipt = false; // Reseta o estado
                     lastReceivedIntimatePhoto = false; // Não foi foto íntima
@@ -949,7 +978,7 @@
                     const randomSensualResponse = sensualResponsesList[Math.floor(Math.random() * sensualResponsesList.length)];
 
                     removeTypingIndicator();
-                    await addMessage(randomSensualResponse, 'suellen');
+                    addMessage(randomSensualResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: randomSensualResponse }] });
                     lastReceivedIntimatePhoto = true; // Marca que a última foto recebida foi íntima
                     ocrStatusMessage.textContent = 'Não foi possível validar o pagamento. Interpretando como foto pessoal.';
@@ -979,7 +1008,7 @@
                 const randomSensualResponse = sensualResponsesList[Math.floor(Math.random() * sensualResponsesList.length)];
 
                 removeTypingIndicator();
-                await addMessage(randomSensualResponse, 'suellen');
+                addMessage(randomSensualResponse, 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: randomSensualResponse }] });
                 lastReceivedIntimatePhoto = true;
             } finally {
@@ -991,64 +1020,61 @@
         /**
          * @function sendPhotos
          * @description Envia as fotos para o chat com base na quantidade solicitada, garantindo fotos únicas.
-         * Agora, com a lógica de delays ajustada.
          * @param {number} numPhotosToDeliver - A quantidade de fotos a serem enviadas.
          */
         async function sendPhotos(numPhotosToDeliver) {
-            const photosToSendThisBatch = Math.min(numPhotosToDeliver, 100 - photosSentCount);
+            // Verifica se há fotos suficientes disponíveis
+            const availablePhotos = 100 - photosSentCount;
+            const photosToSend = Math.min(numPhotosToDeliver, availablePhotos);
 
-            if (photosToSendThisBatch > 0) {
-                // The "Pix confirmado" message is now added directly in the receiptFileInput.addEventListener
-                // before calling sendPhotos, so no need to add it here again.
-
-                for (let i = 0; i < photosToSendThisBatch; i++) {
-                    photosSentCount++;
-                    const imageUrl = preloadedImages[photosSentCount - 1] ? preloadedImages[photosSentCount - 1].src : `foto${photosSentCount}.webp`;
-                    await addMessage('', 'suellen', true, imageUrl); // Await each image message
-                    // No artificial delays between photos, they will appear as quickly as possible
+            if (photosToSend <= 0) {
+                if (photosSentCount >= 100) {
+                    await addTypingIndicatorWithDelay(3000);
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    removeTypingIndicator();
+                    addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
+                } else {
+                    await addTypingIndicatorWithDelay(3000);
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    removeTypingIndicator();
+                    addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
                 }
+                return;
+            }
+
+            // Envia as fotos uma por uma com um pequeno intervalo
+            for (let i = 0; i < photosToSend; i++) {
+                const photoIndex = photosSentCount + 1; // +1 porque as fotos começam em 1
+                const imageUrl = `foto${photoIndex}.webp`;
                 
-                // After all photos are displayed, wait a few seconds, then typing indicator, then message
-                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds after photos appear
+                // Cria um elemento de imagem para verificar se ela carrega corretamente
+                const img = new Image();
+                img.src = imageUrl;
+                
+                // Adiciona um fallback caso a imagem não carregue
+                img.onerror = () => {
+                    console.error(`Failed to load image: ${imageUrl}`);
+                    // Se a imagem não carregar, tenta novamente com um placeholder
+                    addMessage('', 'suellen', true, 'https://placehold.co/300x400/4A0080/FFFFFF?text=Imagem+Não+Encontrada');
+                };
+                
+                // Se a imagem carregar corretamente, adiciona ao chat
+                img.onload = () => {
+                    addMessage('', 'suellen', true, imageUrl);
+                };
+                
+                photosSentCount++;
+                
+                // Pequeno delay entre fotos para melhor visualização
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
 
-                await addTypingIndicatorWithDelay(0); // Add typing indicator immediately after the wait
-                await new Promise(resolve => setTimeout(resolve, 4000)); // Wait for typing animation
+            // Verifica se todas as fotos foram enviadas
+            if (photosSentCount >= 100) {
+                await addTypingIndicatorWithDelay(3000);
+                await new Promise(resolve => setTimeout(resolve, 4000));
                 removeTypingIndicator();
-
-                let finalMessageText;
-                if (photosSentCount >= 100) {
-                    finalMessageText = "Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥";
-                } else {
-                    const provocativeResponses = [
-                        "Espero que essas fotinhas deixem seu dia mais quente... 😏",
-                        "Gostou do que viu, meu bem? Tem muito mais onde essas vieram... 😈",
-                        "Essas são só um gostinho do que te espera... 😉",
-                        "Me diz, qual delas te deixou mais sem fôlego? 🔥",
-                        "Aproveite cada detalhe, fiz com carinho pra você... 💋",
-                        "Se prepare, porque o próximo pack vai ser ainda mais proibido... 🥵",
-                        "Sua reação é a melhor parte... espero que esteja gostando! 🤤",
-                        "Olha bem, cada uma delas tem um segredinho só pra você... 😏",
-                        "Me conta o que achou, adoro saber o que te excita... 😈",
-                        "Sentiu o calor daí? É o efeito das minhas fotos em você... 🔥"
-                    ];
-                    finalMessageText = provocativeResponses[Math.floor(Math.random() * provocativeResponses.length)];
-                }
-                await addMessage(finalMessageText, 'suellen');
-                chatHistory.push({ role: "model", parts: [{ text: finalMessageText }] });
-            } else {
-                if (photosSentCount >= 100) {
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
-                    await addMessage("Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Já te enviei todas as fotos que tinha por agora, amor. Mas logo logo tem mais! 😉" }] });
-                } else {
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
-                    await addMessage("Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Não consigo enviar essa quantidade de fotos agora, amor. Tenta um valor diferente? 💋" }] });
-                }
+                addMessage("Acabou por hoje, meu bem. Mas fica por perto... logo logo eu volto com mais surpresas 🔥", 'suellen');
             }
         }
 
@@ -1104,10 +1130,10 @@
                 - "Se isso foi só o começo... imagina o que mais você guarda aí 😏🔥"
                 - "Me manda isso e acha que eu vou continuar normal? Ai, bebê... 🙈"
                 - "Tô tentando fingir que sou forte... mas com essa foto ficou difícil 😳💦"
-                - "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
-                - "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
-                - "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
-                - "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥",
+                - "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥"
+                - "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤"
+                - "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑"
+                - "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥"
                 - "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
             - **Lembre-se da última foto íntima recebida.** Se o usuário mencionar a foto íntima que ele enviou (ex: "Gostou da minha foto?", "O que achou?"), responda de forma entusiasmada e sensual, confirmando que você amou e que te deixou excitada.
             - **Diferencie claramente as intenções do usuário:**
@@ -1160,30 +1186,59 @@
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
+            // Pré-carrega as primeiras imagens para garantir que estejam disponíveis
+            await preloadInitialImages();
+            
             // Atraso inicial antes da primeira mensagem
             await new Promise(resolve => setTimeout(resolve, 4000));
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
             await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
             removeTypingIndicator();
-            await addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
+            addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
 
-        // Pré-carregador de imagens e armazenador no array
-        window.addEventListener("load", () => {
-            for (let i = 1; i <= 100; i++) {
+        /**
+         * @function preloadInitialImages
+         * @description Pré-carrega as primeiras imagens para garantir disponibilidade imediata
+         */
+        async function preloadInitialImages() {
+            // Pré-carrega as primeiras 20 imagens para garantir que estejam disponíveis rapidamente
+            for (let i = 1; i <= 20; i++) {
                 const img = new Image();
                 img.src = `foto${i}.webp`;
                 img.onload = () => {
-                    // Once loaded, store the image object in the array
                     preloadedImages[i - 1] = img;
-                    console.log(`Preloaded: ${img.src}`);
+                    console.log(`Pré-carregada: foto${i}.webp`);
                 };
                 img.onerror = () => {
-                    console.error(`Failed to preload: foto${i}.webp`);
+                    console.error(`Falha ao carregar: foto${i}.webp`);
+                    // Se falhar, tenta novamente após um curto intervalo
+                    setTimeout(() => {
+                        img.src = `foto${i}.webp`;
+                    }, 500);
                 };
+                await new Promise(resolve => setTimeout(resolve, 50)); // Pequeno delay entre requisições
             }
-        });
+            
+            // Continua pré-carregando o restante das imagens em segundo plano
+            for (let i = 21; i <= 100; i++) {
+                const img = new Image();
+                img.src = `foto${i}.webp`;
+                img.onload = () => {
+                    preloadedImages[i - 1] = img;
+                    console.log(`Pré-carregada: foto${i}.webp`);
+                };
+                img.onerror = () => {
+                    console.error(`Falha ao carregar: foto${i}.webp`);
+                    // Se falhar, tenta novamente após um curto intervalo
+                    setTimeout(() => {
+                        img.src = `foto${i}.webp`;
+                    }, 500);
+                };
+                await new Promise(resolve => setTimeout(resolve, 30)); // Pequeno delay entre requisições
+            }
+        }
     </script>
 </body>
 </html>
