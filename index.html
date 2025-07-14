@@ -128,8 +128,10 @@
 
         .message-bubble img {
             max-width: 100%;
+            height: auto; /* Garante que a altura se ajuste para manter a proporção */
             border-radius: 15px;
             margin-top: 5px;
+            display: block; /* Garante que a imagem não tenha espaço extra abaixo */
         }
 
         /* Estilo para o indicador de digitação (bolha com 3 pontos) */
@@ -352,7 +354,6 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <!-- Imagem de perfil da Suellen. O onerror fornece uma imagem de placeholder caso a original não carregue. -->
             <img src="perfil.webp" alt="Suellen Rocha" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/100x100/FF69B4/FFFFFF?text=Foto';">
             <div class="header-info">
                 <h2>Suellen Rocha</h2>
@@ -361,10 +362,8 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-            <!-- Mensagens serão inseridas aqui -->
-        </div>
+            </div>
 
-        <!-- Nova seção para upload de comprovante PIX -->
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
                 <img id="receipt-preview" src="" alt="Pré-visualização do Comprovante" style="display: none;">
@@ -424,6 +423,8 @@
         let currentPersonaMode = 'caring'; // 'caring' ou 'sensual'
         let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
 
+        // Array para armazenar as imagens pré-carregadas
+        const preloadedImages = [];
 
         /**
          * @function adjustChatContainerHeight
@@ -496,14 +497,18 @@
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = `Foto de ${sender}`;
+                // Optional: add a load listener to ensure the image is fully loaded before scrolling
+                img.onload = () => {
+                    adjustChatMessagesPadding();
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                };
                 messageBubble.appendChild(img);
             } else {
                 messageBubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             }
 
             chatMessages.appendChild(messageBubble);
-            adjustChatMessagesPadding();
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            adjustChatMessagesPadding(); // Adjust padding and scroll after adding message
         }
 
         /**
@@ -751,7 +756,7 @@
                     "Avisa antes de me deixar assim... tremendo só de olhar 👀🔥",
                     "Cê não tem noção do que essa foto fez comigo agora... ou será que tem? 😏🖤",
                     "Nossa... isso não foi só uma foto. Foi um ataque direto nos meus pensamentos 😶‍🌫️🍑",
-                    "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui... 😩🔥",
+                    "Você me joga isso na cara e quer que eu reaja como? Tô em chamas aqui...😩🔥",
                     "Eu devia te bloquear por me deixar assim... ou te mandar algo de volta? 😈📤"
                 ];
                 const randomResponse = sensualResponses[Math.floor(Math.random() * sensualResponses.length)];
@@ -992,17 +997,12 @@
             if (photosToSendThisBatch > 0) {
                 for (let i = 0; i < photosToSendThisBatch; i++) {
                     photosSentCount++;
-                    const imageUrl = `foto${photosSentCount}.webp`; // Assume que as fotos estão nomeadas de foto1.webp a foto100.webp
-                    
-                    await addTypingIndicatorWithDelay(3000); // 3s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
-                    removeTypingIndicator();
+                    // Use the preloaded image if available, otherwise construct the URL
+                    const imageUrl = preloadedImages[photosSentCount - 1] ? preloadedImages[photosSentCount - 1].src : `foto${photosSentCount}.webp`;
                     
                     addMessage('', 'suellen', true, imageUrl);
                     
-                    if (i < photosToSendThisBatch - 1) { // Adiciona um pequeno atraso entre as fotos
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-                    }
+                    // No artificial delays between photos, they will appear as quickly as possible
                 }
                 
                 if (photosSentCount >= 100) {
@@ -1143,14 +1143,21 @@
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
 
-        // Pré-carregador silencioso de imagens (não exibe nada)
-window.addEventListener("load", () => {
-  for (let i = 1; i <= 100; i++) {
-    const img = new Image();
-    img.src = `foto${i}.webp`;
-    // Imagem carrega em cache, mas não aparece nem interfere
-  }
-});
+        // Pré-carregador de imagens e armazenador no array
+        window.addEventListener("load", () => {
+            for (let i = 1; i <= 100; i++) {
+                const img = new Image();
+                img.src = `foto${i}.webp`;
+                img.onload = () => {
+                    // Once loaded, store the image object in the array
+                    preloadedImages[i - 1] = img;
+                    console.log(`Preloaded: ${img.src}`);
+                };
+                img.onerror = () => {
+                    console.error(`Failed to preload: foto${i}.webp`);
+                };
+            }
+        });
     </script>
 </body>
 </html>
