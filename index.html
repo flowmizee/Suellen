@@ -362,7 +362,7 @@
         </div>
 
         <div class="chat-messages" id="chat-messages">
-        </div>
+            </div>
 
         <div class="pix-upload-area" id="pix-upload-area">
             <div class="pix-preview-container">
@@ -413,40 +413,41 @@
         const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-        let photosSentCount = 0; // Tracks total photos sent in the current session
-        let expectedPaymentAmount = 0; // Still used for Suellen's initial PIX message
-        let waitingForPaymentReceipt = false; // State to indicate Suellen is waiting for a receipt
-        let waitingForIntimatePhoto = false; // State to indicate Suellen is waiting for an intimate photo
+        let photosSentCount = 0;
+        let expectedPaymentAmount = 0; // Ainda usado para a mensagem inicial da Suellen sobre o PIX
+        let waitingForPaymentReceipt = false; // Estado para indicar que Suellen está esperando um comprovante
+        let waitingForIntimatePhoto = false; // Estado para indicar que Suellen está esperando uma foto íntima
         let typingIndicatorElement = null;
         let customActionButton = null;
-        let currentPersonaMode = 'caring'; // 'caring' or 'sensual'
-        let lastReceivedIntimatePhoto = false; // New state to remember the last intimate photo received
+        let tesseractWorker = null;
+        let currentPersonaMode = 'caring'; // 'caring' ou 'sensual'
+        let lastReceivedIntimatePhoto = false; // Novo estado para lembrar da última foto íntima recebida
 
-        // Array to store preloaded images (though not directly used for adding to chat, helpful for caching)
+        // Array para armazenar as imagens pré-carregadas
         const preloadedImages = [];
 
         /**
          * @function adjustChatContainerHeight
-         * @description Adjusts the height of the chat-container to the actual viewport height,
-         * which is crucial for handling the virtual keyboard on mobile devices.
+         * @description Ajusta a altura do chat-container para a altura real da viewport,
+         * o que é crucial para lidar com o teclado virtual em dispositivos móveis.
          */
         function adjustChatContainerHeight() {
             chatContainer.style.height = `${window.innerHeight}px`;
-            // Readjust padding of messages and position of upload area after container height is set
+            // Reajusta o padding das mensagens e a posição da área de upload após a altura do container ser definida
             adjustChatMessagesPadding();
         }
 
         /**
          * @function adjustChatMessagesPadding
-         * @description Adjusts the bottom padding of the messages area and the position of the PIX upload area
-         * to ensure that the header, input area, and upload area (when visible)
-         * are always visible and message content is not hidden by them.
+         * @description Ajusta o padding inferior da área de mensagens e a posição da área de upload PIX
+         * para garantir que o cabeçalho, a área de input e a área de upload (quando visível)
+         * estejam sempre visíveis e o conteúdo das mensagens não seja ocultado por eles.
          */
         function adjustChatMessagesPadding() {
             const headerHeight = chatHeader.offsetHeight;
             const inputAreaHeight = chatInputArea.offsetHeight;
 
-            let currentBottomPadding = inputAreaHeight + 20; // Base padding for the input area
+            let currentBottomPadding = inputAreaHeight + 20; // Padding base para a área de input
 
             if (pixUploadArea.style.display === 'flex') {
                 const pixAreaVisibleHeight = pixUploadArea.offsetHeight;
@@ -457,36 +458,36 @@
             }
             
             chatMessages.style.paddingBottom = `${currentBottomPadding}px`;
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scrolls to the last message
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
         }
 
         /**
          * @function initializeTesseractWorker
-         * @description Initializes the Tesseract.js worker for OCR.
-         * Loads the Portuguese language ('por') for text recognition.
+         * @description Inicializa o worker do Tesseract.js para OCR.
+         * Carrega o idioma português ('por') para reconhecimento de texto.
          */
         async function initializeTesseractWorker() {
             if (!tesseractWorker) {
                 ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
                 try {
-                    tesseractWorker = await Tesseract.createWorker('por'); // 'por' for Portuguese
+                    tesseractWorker = await Tesseract.createWorker('por'); // 'por' para português
                     ocrStatusMessage.textContent = 'Validador pronto! Envie seu comprovante.';
                 } catch (error) {
                     console.error('Erro ao carregar validador:', error);
                     ocrStatusMessage.textContent = 'Erro ao carregar validador. Tente novamente.';
-                    throw error; // Re-throw so the caller knows it failed
+                    throw error; // Re-throw para que o chamador saiba que falhou
                 }
             }
         }
 
         /**
          * @function addMessage
-         * @description Adds a new message bubble to the chat.
-         * Supports text messages and images.
-         * @param {string} text - The message text.
-         * @param {string} sender - The message sender ('user' or 'suellen').
-         * @param {boolean} isImage - True if the message is an image.
-         * @param {string} imageUrl - Image URL (if isImage is true).
+         * @description Adiciona uma nova bolha de mensagem ao chat.
+         * Suporta mensagens de texto e imagens.
+         * @param {string} text - O texto da mensagem.
+         * @param {string} sender - O remetente da mensagem ('user' ou 'suellen').
+         * @param {boolean} isImage - True se a mensagem for uma imagem.
+         * @param {string} imageUrl - URL da imagem (se isImage for true).
          */
         async function addMessage(text, sender, isImage = false, imageUrl = '') {
             const messageBubble = document.createElement('div');
@@ -496,13 +497,6 @@
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = `Foto de ${sender}`;
-                // Add onerror for images in chat bubbles to show a placeholder if loading fails
-                img.onerror = function() {
-                    this.onerror=null;
-                    this.src='https://placehold.co/150x150/FF69B4/FFFFFF?text=Erro+na+Foto'; // Placeholder for failed image
-                    this.alt='Imagem não carregada';
-                    console.error(`Failed to load image: ${imageUrl}`);
-                };
                 // Optional: add a load listener to ensure the image is fully loaded before scrolling
                 img.onload = () => {
                     adjustChatMessagesPadding();
@@ -519,8 +513,8 @@
 
         /**
          * @function addTypingIndicatorWithDelay
-         * @description Adds the "typing..." bubble to the chat after a delay.
-         * @param {number} delayBeforeTyping - Delay in milliseconds before showing the indicator.
+         * @description Adiciona a bolha de "digitando..." ao chat após um atraso.
+         * @param {number} delayBeforeTyping - Atraso em milissegundos antes de mostrar o indicador.
          */
         async function addTypingIndicatorWithDelay(delayBeforeTyping) {
             await new Promise(resolve => setTimeout(resolve, delayBeforeTyping));
@@ -529,7 +523,7 @@
 
         /**
          * @function addTypingIndicator
-         * @description Adds the "typing..." bubble to the chat and updates the header status.
+         * @description Adiciona a bolha de "digitando..." ao chat e atualiza o status do cabeçalho.
          */
         function addTypingIndicator() {
             if (typingIndicatorElement) return;
@@ -551,7 +545,7 @@
 
         /**
          * @function removeTypingIndicator
-         * @description Removes the "typing..." bubble from the chat and resets the header status.
+         * @description Remove a bolha de "digitando..." do chat e reseta o status do cabeçalho.
          */
         function removeTypingIndicator() {
             if (typingIndicatorElement) {
@@ -564,9 +558,9 @@
 
         /**
          * @function addCustomActionButton
-         * @description Adds a custom button to the chat.
-         * @param {string} text - The button text.
-         * @param {function} onClickHandler - The function to execute when the button is clicked.
+         * @description Adiciona um botão personalizado ao chat.
+         * @param {string} text - O texto do botão.
+         * @param {function} onClickHandler - A função a ser executada ao clicar no botão.
          */
         function addCustomActionButton(text, onClickHandler) {
             if (customActionButton) {
@@ -583,7 +577,7 @@
 
         /**
          * @function removeCustomActionButton
-         * @description Removes the custom button from the chat.
+         * @description Remove o botão personalizado do chat.
          */
         function removeCustomActionButton() {
             if (customActionButton) {
@@ -595,9 +589,9 @@
 
         /**
          * @function detectSensualIntent
-         * @description Detects if the user's message has a sensual tone.
-         * @param {string} message - The user's message.
-         * @returns {boolean} - True if the intent is sensual, false otherwise.
+         * @description Detecta se a mensagem do usuário tem um teor sensual.
+         * @param {string} message - A mensagem do usuário.
+         * @returns {boolean} - True se a intenção for sensual, false caso contrário.
          */
         function detectSensualIntent(message) {
             const sensualKeywords = [
@@ -612,9 +606,9 @@
 
         /**
          * @function processUserMessage
-         * @description Processes the message sent by the user, adds it to the chat,
-         * calls the Gemini API to get Suellen's response, and handles photo sales logic.
-         * @param {string} message - The message typed by the user.
+         * @description Processa a mensagem enviada pelo usuário, adiciona ao chat,
+         * chama a API Gemini para obter a resposta da Suellen e lida com a lógica de venda de fotos.
+         * @param {string} message - A mensagem digitada pelo usuário.
          */
         async function processUserMessage(message) {
             addMessage(message, 'user');
@@ -622,17 +616,17 @@
 
             removeCustomActionButton();
 
-            // Logic to detect mode and transition
+            // Lógica de detecção de modo e transição
             const isSensual = detectSensualIntent(message);
             if (isSensual) {
                 currentPersonaMode = 'sensual';
             } else if (currentPersonaMode === 'sensual' && !isSensual) {
-                // If in sensual mode, but the new message is not sensual,
-                // could consider returning to caring mode if the message is very "neutral".
-                // For simplicity, we'll keep sensual mode once activated, unless a purchase is completed.
+                // Se estava no modo sensual, mas a nova mensagem não é sensual,
+                // pode-se considerar voltar ao modo carinhoso se a mensagem for muito "neutra".
+                // Por simplicidade, manteremos o modo sensual uma vez ativado, a menos que uma compra seja concluída.
             }
 
-            // New: Logic to handle the user saying they WILL SEND a photo of themselves
+            // Novo: Lógica para lidar com o usuário dizendo que VAI ENVIAR uma foto dele
             const userIsSendingPhotoKeywords = ['vou te mandar foto', 'enviei minha foto', 'olha minha foto', 'te mandei uma foto'];
             const userIsSendingPhoto = userIsSendingPhotoKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
@@ -654,11 +648,11 @@
                 return; // Stop further processing as this intent is handled
             }
 
-            // Checks if the message contains a photo request
-            const photoRequestKeywords = ['me manda foto', 'quero ver suas fotos', 'você tem fotos?', 'quanto custa suas fotos?']; // More specific
+            // Verifica se a mensagem contém uma solicitação de fotos
+            const photoRequestKeywords = ['me manda foto', 'quero ver suas fotos', 'você tem fotos?', 'quanto custa suas fotos?']; // Mais específico
             const wantsPhotos = photoRequestKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
-            // Checks if the message contains a requested quantity of photos
+            // Verifica se a mensagem contém uma quantidade de fotos solicitada
             const quantityMatch = message.match(/(\d+)\s*(fotos|foto)/i) || message.match(/(cinco|dez|quinze|vinte|vinte e cinco|trinta|trinta e cinco|quarenta|quarenta e cinco|cinquenta|cinquenta e cinco|sessenta|sessenta e cinco|setenta|setenta e cinco|oitenta|oitenta e cinco|noventa|noventa e cinco|cem)/i);
             let requestedQuantity = 0;
 
@@ -689,7 +683,7 @@
                 }
             }
 
-            // Logic to handle photo requests and payment
+            // Lógica para lidar com pedidos de fotos e pagamento
             if (wantsPhotos && requestedQuantity === 0) {
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
@@ -721,17 +715,17 @@
                 addMessage(pixMsg3, 'suellen');
                 chatHistory.push({ role: "model", parts: [{ text: pixMsg3 }] });
                 
-                waitingForPaymentReceipt = true; // Sets that we are waiting for a receipt
-                waitingForIntimatePhoto = false; // Ensures exclusivity
+                waitingForPaymentReceipt = true; // Define que estamos esperando um comprovante
+                waitingForIntimatePhoto = false; // Garante que não estamos esperando foto íntima
 
                 addCustomActionButton('Ver Fotos / Enviar Comprovante', () => {
                     chatInputArea.style.display = 'none';
                     pixUploadArea.style.display = 'flex';
                     adjustChatMessagesPadding();
-                    // Do not initialize tesseract here, it will be initialized in the file input listener if needed
+                    // Não inicializa o tesseract aqui, ele será inicializado no listener do input de arquivo se for necessário
                 });
                 return;
-            } else if (requestedQuantity !== 0 && (requestedQuantity < 5 || requestedQuantity > 100 || requestedQuantity % 5 !== 0)) { // Removed 'wantsPhotos' from here
+            } else if (requestedQuantity !== 0 && (requestedQuantity < 5 || requestedQuantity > 100 || requestedQuantity % 5 !== 0)) { // Removido 'wantsPhotos' daqui
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
                 removeTypingIndicator();
@@ -740,7 +734,7 @@
                 return;
             }
 
-            // Logic to respond to questions about the last intimate photo sent
+            // Lógica para responder a perguntas sobre a última foto íntima enviada
             const lastPhotoKeywords = ['gostou', 'achou', 'minha foto', 'foto que te mandei'];
             const refersToLastIntimatePhoto = lastPhotoKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
@@ -770,7 +764,7 @@
                 return;
             }
 
-            // If it's not a valid quantity request or photo request, process normally with AI
+            // Se não for uma solicitação de quantidade válida ou pedido de fotos, processa normalmente com a IA
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
             await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
             
@@ -778,7 +772,7 @@
                 contents: [
                     {
                         role: "user",
-                        parts: [{ text: personaPrompt(currentPersonaMode) }] // Passes the current mode to the prompt
+                        parts: [{ text: personaPrompt(currentPersonaMode) }] // Passa o modo atual para o prompt
                     },
                     ...chatHistory
                 ]
@@ -804,7 +798,7 @@
                     // Check if Suellen requested an intimate photo in her response
                     if (currentPersonaMode === 'sensual' && (suellenResponse.toLowerCase().includes('fotinha sua') || suellenResponse.toLowerCase().includes('foto íntima') || suellenResponse.toLowerCase().includes('me manda uma foto'))) {
                         waitingForIntimatePhoto = true;
-                        waitingForPaymentReceipt = false; // Ensures exclusivity
+                        waitingForPaymentReceipt = false; // Garante exclusividade
                     }
 
                 } else {
@@ -820,11 +814,11 @@
             }
         }
 
-        // Handle receipt file selection and preview, and start OCR
+        // Lidar com a seleção do arquivo de comprovante e pré-visualização, e iniciar OCR
         receiptFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) {
-                // If no file selected, hide upload area and return to chat input
+                // Se nenhum arquivo selecionado, esconde a área de upload e retorna ao input de chat
                 pixUploadArea.style.display = 'none';
                 chatInputArea.style.display = 'flex';
                 adjustChatMessagesPadding();
@@ -838,7 +832,7 @@
 
             if (file.type.startsWith('image/')) {
                 reader.onload = async (e) => {
-                    await addMessage('', 'user', true, e.target.result); // Add image to chat
+                    await addMessage('', 'user', true, e.target.result); // Adiciona a imagem ao chat
                     receiptPreview.src = e.target.result;
                     receiptPreview.style.display = 'block';
                     fileDataForOCR = e.target.result;
@@ -853,9 +847,9 @@
                 return;
             }
 
-            await new Promise(resolve => reader.onloadend = resolve); // Wait for the file to be read
+            await new Promise(resolve => reader.onloadend = resolve); // Espera o arquivo ser lido
 
-            // Hide upload area and return to chat immediately
+            // Esconde a área de upload e volta para o chat imediatamente
             pixUploadArea.style.display = 'none';
             chatInputArea.style.display = 'flex';
             adjustChatMessagesPadding();
@@ -863,12 +857,12 @@
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
             await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
 
-            // Variable to control if the image was recognized as a receipt
+            // Variável para controlar se a imagem foi reconhecida como comprovante
             let isPaymentReceipt = false;
-            const amountPattern = /(\d{1,3}(?:[.,]\d{2})?)/g; // Declaration of the variable outside the try-catch
+            const amountPattern = /(\d{1,3}(?:[.,]\d{2})?)/g; // Declaração da variável fora do try-catch
 
             try {
-                // First, try to process as a receipt
+                // Primeiro, tentar processar como comprovante
                 if (!tesseractWorker) {
                     ocrStatusMessage.textContent = 'Preparando validador de pagamento...';
                     try {
@@ -922,43 +916,42 @@
                 }
 
                 if (isPaymentReceipt && nameMatches) {
-                    // It's a valid payment receipt
+                    // É um comprovante de pagamento válido
                     const photosToDeliver = validAmountsMap[extractedAmount];
                     
-                    // Remove typing indicator before showing the first message
-                    removeTypingIndicator();
-                    // 1. Show the confirmation message immediately
+                    // 1. Mostra a mensagem de confirmação
                     addMessage("Pix confirmado, amor 😘... Aqui estão suas fotos 😈", 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: "Pix confirmado, amor 😘... Aqui estão suas fotos 😈" }] });
                     
-                    // 2. Send the photos immediately (await to ensure they are all sent before follow-up)
-                    await sendPhotos(photosToDeliver); // Await this call
-
-                    // 3. After a small delay, show the provocative message
-                    await addTypingIndicatorWithDelay(2000); // 2s delay before typing
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // 3s delay after typing
-                    removeTypingIndicator();
+                    // 2. Envia as fotos imediatamente (sem delay)
+                    sendPhotos(photosToDeliver);
                     
-                    const followUpMessages = [
-                        "Espero que essas fotinhas deixem seu dia mais quente... 😏",
-                        "Gostou do que viu? Eu sabia que ia adorar... 🤤",
-                        "Agora você vai ficar me devendo uma visita... 😈",
-                        "Quer saber um segredo? Eu também me excitei tirando essas fotos... 🔥",
-                        "Me conta depois qual foi a sua favorita... eu tenho minhas suspeitas 😉",
-                        "Você não imagina o trabalho que deu pra tirar essas fotos... mas valeu cada segundo vendo sua reação 😘",
-                        "Agora você tem um pedacinho meu só pra você... guarda com carinho 🖤",
-                        "Cada foto tem uma história... qual você quer que eu conte primeiro? 😏"
-                    ];
-                    const randomFollowUp = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
-                    addMessage(randomFollowUp, 'suellen');
-                    chatHistory.push({ role: "model", parts: [{ text: randomFollowUp }] });
+                    // 3. Depois de um pequeno delay, mostra a mensagem provocante
+                    setTimeout(async () => {
+                        await addTypingIndicatorWithDelay(2000); // 2s delay before typing
+                        await new Promise(resolve => setTimeout(resolve, 3000)); // 3s delay after typing
+                        removeTypingIndicator();
+                        
+                        const followUpMessages = [
+                            "Espero que essas fotinhas deixem seu dia mais quente... 😏",
+                            "Gostou do que viu? Eu sabia que ia adorar... 🤤",
+                            "Agora você vai ficar me devendo uma visita... 😈",
+                            "Quer saber um segredo? Eu também me excitei tirando essas fotos... 🔥",
+                            "Me conta depois qual foi a sua favorita... eu tenho minhas suspeitas 😉",
+                            "Você não imagina o trabalho que deu pra tirar essas fotos... mas valeu cada segundo vendo sua reação 😘",
+                            "Agora você tem um pedacinho meu só pra você... guarda com carinho 🖤",
+                            "Cada foto tem uma história... qual você quer que eu conte primeiro? 😏"
+                        ];
+                        const randomFollowUp = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
+                        addMessage(randomFollowUp, 'suellen');
+                        chatHistory.push({ role: "model", parts: [{ text: randomFollowUp }] });
+                    }, 1000); // Pequeno delay antes de começar a digitar
                     
                     ocrStatusMessage.textContent = 'Pagamento validado com sucesso!';
-                    waitingForPaymentReceipt = false; // Reset state
-                    lastReceivedIntimatePhoto = false; // It was not an intimate photo
+                    waitingForPaymentReceipt = false; // Reseta o estado
+                    lastReceivedIntimatePhoto = false; // Não foi foto íntima
                 } else {
-                    // It's not a payment receipt, so it's an intimate photo
-                    currentPersonaMode = 'sensual'; // Force sensual mode for intimate photo responses
+                    // Não é um comprovante de pagamento, então é uma foto íntima
+                    currentPersonaMode = 'sensual'; // Força o modo sensual para respostas de fotos íntimas
                     const sensualResponsesList = [
                         "NOSSA! Que gostoso.... 🥵",
                         "Eu sentaria até gozar 🤤",
@@ -980,14 +973,14 @@
                     removeTypingIndicator();
                     addMessage(randomSensualResponse, 'suellen');
                     chatHistory.push({ role: "model", parts: [{ text: randomSensualResponse }] });
-                    lastReceivedIntimatePhoto = true; // Mark that the last received photo was intimate
+                    lastReceivedIntimatePhoto = true; // Marca que a última foto recebida foi íntima
                     ocrStatusMessage.textContent = 'Não foi possível validar o pagamento. Interpretando como foto pessoal.';
                 }
 
             } catch (error) {
                 console.error('Erro no processamento do comprovante (OCR):', error);
                 ocrStatusMessage.textContent = 'Erro ao processar comprovante. Tente uma imagem mais clara.';
-                // If OCR fails completely, we still treat it as an intimate photo
+                // Se o OCR falhar completamente, ainda assim tratamos como foto íntima
                 currentPersonaMode = 'sensual';
                 const sensualResponsesList = [
                     "NOSSA! Que gostoso.... 🥵",
@@ -1019,13 +1012,11 @@
 
         /**
          * @function sendPhotos
-         * @description Sends photos to the chat based on the requested quantity, ensuring unique photos.
-         * @param {number} numPhotosToDeliver - The number of photos to be sent.
-         * @remarks This function manages `photosSentCount` to ensure unique photos are sent within a session.
-         * If the page is reloaded, `photosSentCount` will reset, and the photo sequence will start from `foto1.webp` again.
+         * @description Envia as fotos para o chat com base na quantidade solicitada, garantindo fotos únicas.
+         * @param {number} numPhotosToDeliver - A quantidade de fotos a serem enviadas.
          */
         async function sendPhotos(numPhotosToDeliver) {
-            // Check if there are enough photos available
+            // Verifica se há fotos suficientes disponíveis
             const remainingPhotos = 100 - photosSentCount;
             const photosToSend = Math.min(numPhotosToDeliver, remainingPhotos);
 
@@ -1037,7 +1028,7 @@
                 return;
             }
 
-            // Send photos one by one with a small delay
+            // Envia as fotos uma por uma com um pequeno delay
             for (let i = 0; i < photosToSend; i++) {
                 const photoNumber = photosSentCount + 1;
                 const imageUrl = `foto${photoNumber}.webp`;
@@ -1045,11 +1036,11 @@
                 addMessage('', 'suellen', true, imageUrl);
                 photosSentCount++;
                 
-                // Small delay between photos for better viewing
+                // Pequeno delay entre fotos para melhor visualização
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
 
-            // Check if all photos have been sent
+            // Verifica se todas as fotos foram enviadas
             if (photosSentCount >= 100) {
                 await addTypingIndicatorWithDelay(3000); // 3s delay before typing
                 await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
@@ -1058,7 +1049,7 @@
             }
         }
 
-        // Function to generate the persona prompt based on the current mode
+        // Função para gerar o prompt da persona com base no modo atual
         function personaPrompt(mode) {
             let prompt = `
             Você é Suellen Rocha. Sua identidade é:
@@ -1138,26 +1129,26 @@
             }
         });
 
-        // Event listeners for upload buttons
+        // Event listeners para os botões de upload
         uploadPhotoButton.addEventListener('click', () => {
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
         });
 
-        // Event listeners for attachment buttons (now only for images)
+        // Event listeners para os botões de anexo (agora só para imagens)
         attachButton.addEventListener('click', () => {
-            // Just opens the file selector. File interpretation happens in the input listener.
+            // Apenas abre o seletor de arquivos. A interpretação do arquivo ocorre no listener do input.
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
         });
 
         sendPhotoButton.addEventListener('click', () => {
-            // Just opens the file selector. File interpretation happens in the input listener.
+            // Apenas abre o seletor de arquivos. A interpretação do arquivo ocorre no listener do input.
             receiptFileInput.accept = 'image/*';
             receiptFileInput.click();
         });
 
-        // Suellen's initial greeting when the page loads
+        // Saudação inicial da Suellen ao carregar a página
         window.onload = async () => {
             adjustChatContainerHeight();
 
@@ -1166,7 +1157,7 @@
                 window.visualViewport.addEventListener('resize', adjustChatContainerHeight);
             }
             
-            // Initial delay before the first message
+            // Atraso inicial antes da primeira mensagem
             await new Promise(resolve => setTimeout(resolve, 4000));
             await addTypingIndicatorWithDelay(3000); // 3s delay before typing
             await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay after typing
@@ -1175,7 +1166,7 @@
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
         };
 
-        // Image preloader and storage in the array
+        // Pré-carregador de imagens e armazenador no array
         window.addEventListener("load", () => {
             for (let i = 1; i <= 100; i++) {
                 const img = new Image();
