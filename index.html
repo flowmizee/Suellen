@@ -1164,9 +1164,9 @@
             }
             
             // Simula um atraso antes da primeira mensagem da Suellen
-            await new Promise(resolve => setTimeout(resolve, 4000)); // Atraso original
-            await addTypingIndicatorWithDelay(3000); // Atraso original
-            await new Promise(resolve => setTimeout(resolve, 4000)); // Atraso original
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Atraso original
+            await addTypingIndicatorWithDelay(1000); // Atraso original
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Atraso original
             removeTypingIndicator();
             addMessage("Olá, meu bem! Que bom te ver por aqui... 🙈", 'suellen');
             chatHistory.push({ role: "model", parts: [{ text: "Olá, meu bem! Que bom te ver por aqui... 🙈" }] });
