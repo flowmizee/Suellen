@@ -418,7 +418,7 @@
 
         let chatHistory = [];
         // A API_KEY deve ser vazia para que o ambiente Canvas a injete em tempo de execução.
-        const API_KEY = "AIzaSyBHUWSEIVXy3z0NT13ps8aU5TOZJWuC9ss"; 
+        const API_KEY = ""; 
         // A URL da API foi corrigida para usar 'gemini-2.0-flash' conforme as instruções.
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
@@ -498,7 +498,6 @@
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = `Foto de ${sender}`;
-                // Removido o onerror para não ter fallback de placeholder
                 img.onload = () => {
                     adjustChatMessagesPadding();
                     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1032,7 +1031,7 @@
 
             for (let i = 0; i < photosToSend; i++) {
                 const photoNumber = photosSentCount + 1;
-                // Caminho da imagem local, sem placeholder
+                // Caminho da imagem local
                 const imageUrl = `foto${photoNumber}.webp`; 
                 
                 addMessage('', 'suellen', true, imageUrl); // Adiciona a imagem ao chat
@@ -1182,7 +1181,6 @@
                     preloadedImages[i - 1] = img;
                     console.log(`Preloaded: ${img.src}`);
                 };
-                // Removido o onerror para não ter fallback de placeholder
             }
         });
     </script>
